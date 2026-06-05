@@ -19,6 +19,22 @@ class Legend(Group):
         group_buff: float = 0.2,
         **kwargs,
     ):
+        """
+        This object creates a visual legend, that can be chosen vertical or horizontal, that may contain information about decks or archetypes of the meta you want to display.
+
+        Args:
+            labels (list): The names of decks to explore. It should coincide with names of pictures to display.
+            shares_pct (list): The list of % share.
+            colors_dict (dict):The colors associated to each deck/archetype.
+            font_size (float, optional): The font size. Defaults to 25.
+            stroke_width (float, optional): Defaults to 2.
+            direction (str, optional): Direction for the legend to be displayed. Defaults to "vertical".
+            show_pct_symbol (bool, optional): Show or not the % symbol. Defaults to True.
+            pin_scale (float, optional): Defaults to 1.0.
+            item_buff (float, optional): Defaults to 0.15.
+            group_buff (float, optional): Defaults to 0.2.
+
+        """
         super().__init__(**kwargs)
 
         if len(shares_pct) != len(labels):

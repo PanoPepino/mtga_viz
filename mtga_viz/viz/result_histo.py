@@ -14,6 +14,17 @@ class ResultHistogram(Group):
         stroke_width: float = 1,
         **kwargs,
     ):
+        """
+        Simple piled histogram to count how many games end up 2-0, 2-1, and so on against a given deck or archetype.
+
+        Args:
+            df (_type_): The dataframe to extract information from.
+            category_col (_type_): The category one wants to explore.
+            result_cols (tuple, optional): Defaults to ("2-0", "2-1", "1-2", "0-2").
+            color_map (_type_, optional): The associated color to each result. Defaults to None.
+            height_bar (float, optional): Defaults to 0.6.
+            stroke_width (float, optional): Defaults to 1.
+        """
         super().__init__(**kwargs)
 
         self.df = df

@@ -16,6 +16,21 @@ class FramedPlot(Group):
         stroke_width=2,
         **kwargs,
     ):
+        """
+        Creates a simple Surrounding rectangle to a given object and add a title to it.
+
+        Args:
+            mobj (_type_): The object.
+            title (_type_): The title to add at the top.
+            buff (float, optional): How title the surrounding is to the object.
+            top_extra (float, optional): Add a little bit of buff at top to add title.
+            corner_radius (float, optional): If rounded corners or not.
+            title_buff (float, optional): How close the title is to the top of the surrounding.
+            title_font_size (int, optional): How big the title reads.
+            frame_color (_type_, optional): 
+            title_color (_type_, optional): 
+            stroke_width (int, optional):
+        """
         super().__init__(**kwargs)
 
         self.frame = SurroundingRectangle(

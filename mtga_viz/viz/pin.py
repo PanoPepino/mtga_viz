@@ -12,6 +12,15 @@ class Pin(Group):
         stroke_width: float = 3,
         ** kwargs
     ):
+        """
+        Simple class to transform any image in a visual pin and a border associated to its nature.
+
+        Args:
+            label (str): The name of the deck (taken from the DataFrame)
+            color_label (ParsableManimColor, optional): The associated color. Defaults to BLUE.
+            opa (float, optional): Opacity. Defaults to 0.9.
+            stroke_width (float, optional): Defaults to 3.
+        """
         super().__init__(**kwargs)
 
         self.cut = Circle(fill_opacity=1, radius=2, stroke_color=color_label, stroke_width=0)

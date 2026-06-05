@@ -15,6 +15,19 @@ class Pie_Sectors(VGroup, Mobject):
         stroke_width: float = 1.5,
         **kwargs
     ):
+        """
+        Simple Pie Chart to display shares.
+
+        Args:
+            labels (list): The list of archetypes or decks you want to display.
+            shares_rad (list): The column of DataFrame with % converted to radians.
+            colors_dict (dict): The associated colors to each arch/deck.
+            inner_rad (float, optional): The inner radius of the annulus. Defaults to 0.
+            outer_rad (float, optional): The outer radious of annulus. Defaults to 2.
+            opa (float, optional): Opacity. Defaults to 0.6.
+            stroke_color (_type_, optional): Defaults to WHITE.
+            stroke_width (float, optional): Defaults to 1.5.
+        """
         super().__init__(**kwargs)
 
         self.sectors = VGroup()
