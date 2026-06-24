@@ -3,19 +3,14 @@
 # MTGA Visualisation Tool
 ---
 
-Package to create clean dashboards for competitive gaming for MTG Arena.
+Package to create clean and insightful dashboards for competitive gaming for MTG Arena. 
 
-It targets three different competitive modes in MTG Arena:
+It targets 2 different competitive modes in MTG Arena:
 
-- _Ladder_: Collect your own data (or with friends), and explore how well your chosen deck performs against decks you find in the ladder 
-
+- _Ladder_: Based on any collected database with ladder results, display interesting 
 - _Metagame_: Do you want to collect and display data on plenty of runs of a given Metagame Challenge? 
 
-- _Tournament_: Mother of competitions. Gather information and display insightful data in the form of match matrices, overall win rate vs presence and more.
 
-
-
-(See attached images for expected dashboard for each mode)
 ## Usage instructions
 
 (Under Construction)
@@ -24,9 +19,13 @@ It targets three different competitive modes in MTG Arena:
 
 
 
-<!-->
+<!--
 
-# TO DO
+# To Do
+
+- [ ] Create function to apply Archetype tags. (Better to see first types of deck in notebook and decide)
+
+# Idea of package
 
 Target: Create a package for easy visualisation for MTGA competitive gaming. 
 
@@ -37,19 +36,36 @@ How: It should have 3 main components:
 
 Detail:
 
-    - Ladder: Simply collected data to be displayed:
-        1) WR vs Meta % (Both for archetype and deck)
-        2) Match up Breakdown (i.e. # times 2-0,2-1, etc) (Both for archetype and deck)
-           (Add WR OTP/OTD)?
+    - Ladder: Simply collected data to be displayed. Ideal columns:
+    (timestamp | user_name | user_deck | oppo_deck | result)
 
-    - Metagame: 
-        1) Overall Meta % (Both for archetype and deck)
-        2) WR vs Meta % (Both for archetype and deck)
-        3) Heat map for runs. X = wins; Y = decks. For each X-position:
-            a) Display gradient colors in each square, based on the normalisation respect to 1.
-            b) Display gradient colors + vary its height wrt the normalised value.
-    
-    - Tournament:
+        Plots to draw:
+        1) Overall Archetypes piloted in ladder + sub pies with main decks piloted for each archetype
+        2) WR vs Meta % per Arch w/ confidence levels
+        3) WR vs Meta % per deck (with threshold) & confidence levels
+        4) Top X decks w/ overall WR w/ error and confidence levels.
+        5) Top X decks vs Y other decks, W-L breakdown (2-0, 2-1, etc) with # games 
+        6) Match Matrix for Top X decks with confidence levels.
+        
+
+    - Metagame. Ideal columns:
+    (timestamp | user_name | user_deck | run result | oppo_deck | result)
+
+        Plots to draw:
+        1) Overall Archetypes piloted in metagame challenge + sub pies with main decks piloted for each archetype
+        2) WR vs Meta % per Arch w/ confidence levels
+        3) WR vs Meta % per deck (with threshold) & confidence levels
+        4) Top X decks w/ overall WR w/ error and confidence levels.
+        5) Top X decks vs Y other decks, W-L breakdown (2-0, 2-1, etc) with # games 
+        6) Match Matrix for Top X decks with confidence levels.
+        7) curves of % share per top X decks vs timestamp (1h interval), with some fancy point signaling when a player got a trophy (i.e. a 7-0 run)
+        8) Normalised runs to 1 -> histogram showing % of 0-1, % of 1-1 and so on up to % of 7-0 for top X decks.
+        9) Info-graphics of trophys for those user. (i.e. Manolo -> 2 Trophies (Mardu Energy and Tempo), etc)
+        
+
+
+
+    - Tournament (TO be CONSIDERED IN THE FUTURE):
         1) Overall Meta % (Just Deck)
         2) WR vs Meta % (Just Meta)
         3) Match matrix (avoid mirrors. Grade by confidence)
@@ -62,5 +78,5 @@ Detail:
 - Restructure package
 - Create the cli part
 
-<-->
+-->
 

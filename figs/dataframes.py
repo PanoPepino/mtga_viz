@@ -1,5 +1,5 @@
-from mtga_viz.ext.database_manipulation import *
-from mtga_viz.ext.stats import *
+from mtga_viz.core.database_manipulation import *
+from mtga_viz.core.stats import *
 
 
 CURRENT_ANALYSIS = '../data/win_loss_mtg_ds.numbers'

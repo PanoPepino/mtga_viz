@@ -23,3 +23,14 @@ ART_COLORS = {
     "DD_MS": "#8669A8",
     "DS_DD": "#70562F",
 }
+
+
+MTG_COLORS = {
+    # Mono colors
+    "White":     "#F5ECD3",   # warm parchment-ivory, not pure white
+    "Blue":      "#2A82C9",   # deep cerulean, distinct from your Tempo blue
+    "Black":     "#9B7FC2",   # muted violet (pure black is invisible on bg)
+    "Red":       "#D94F2B",   # ember red, close kin to your Aggro
+    "Green":     "#4CAF6F",   # forest mid-green
+    "Colorless": "#A8A8A8",   # neutral silver-grey (Eldrazi / artifacts)
+}

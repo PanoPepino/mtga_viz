@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from mtga_viz.ext.database_manipulation import add_match_score, rogue_filter
+from mtga_viz.core.database_manipulation import rogue_filter
 from statsmodels.stats.proportion import proportion_confint
 
 
@@ -98,15 +98,3 @@ def get_deck_summary(df, archetype_name, granularity=5):
 
     summary_deck_output = (out[["deck", "share_pct_in_arch", "share_rad_in_arch", "count"]]).merge(wr_deck)
     return summary_deck_output
-
-
-def get_tricks(df):
-    out = (
-        df["trick"]
-        .fillna("")
-        .astype(str)
-        .str.strip()
-    )
-    out = out[out != ""].value_counts().reset_index()
-    out.columns = ["tricks", "numbers"]
-    return out
