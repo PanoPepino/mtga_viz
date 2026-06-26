@@ -2,14 +2,28 @@ import pandas as pd
 from pandas import DataFrame
 from ..utils.helpers import add_hour_index, assign_archetype, count_runs, mtg_guild_normalisation, mtg_prefix_normalisation
 
-# Here you will find all required functions to manipulate the full .csv file beforing performing the analysis. Subfunctions within can be found at utils/helpers.py
+# Here you will find all required functions to manipulate the full .csv file before performing the analysis.
+# Sub-functions within can be found at utils/helpers.py
 
 
 def normalise_wubrg(df,
                     user_deck: str,
                     oppo_deck: str):
     """
-    Take both user_deck and oppo_deck columns and apply WUBRG ordering it that acronym exists.
+    Apply canonical WUBRG color-ordering to the color prefix of both the
+    ``user_deck`` and ``oppo_deck`` columns.
+
+    Delegates to :func:`~mtga_viz.utils.helpers.mtg_prefix_normalisation` on
+    each cell.  Entries whose first token is not a pure color-letter sequence
+    (e.g. named decks like ``'burn'``) are left unchanged.
+
+    Args:
+        df (DataFrame): Match DataFrame with deck-name columns.
+        user_deck (str): Name of the column containing the player's deck names.
+        oppo_deck (str): Name of the column containing the opponent's deck names.
+
+    Returns:
+        DataFrame: Copy of ``df`` with both deck columns normalised.
     """
 
     df_new = df.copy()
@@ -23,7 +37,21 @@ def normalise_guild(df,
                     user_deck: str,
                     oppo_deck: str):
     """
-    Same spirit as previous function, but with guild names (mono color, dual-ravnica guilds and triple-tarkir guilds)
+    Replace Ravnica guild names and Tarkir wedge/shard names with their
+    canonical WUBRG color-prefix equivalents in both deck columns.
+
+    Same spirit as :func:`normalise_wubrg`, but handles named multi-color
+    identities (e.g. ``'izzet'`` → ``'ur'``, ``'sultai'`` → ``'bgu'``) as
+    well as bare single-color prefixes (e.g. ``'b stompy'`` → ``'mono b stompy'``).
+    Delegates to :func:`~mtga_viz.utils.helpers.mtg_guild_normalisation`.
+
+    Args:
+        df (DataFrame): Match DataFrame with deck-name columns.
+        user_deck (str): Name of the column containing the player's deck names.
+        oppo_deck (str): Name of the column containing the opponent's deck names.
+
+    Returns:
+        DataFrame: Copy of ``df`` with both deck columns normalised.
     """
 
     df_new = df.copy()
@@ -38,9 +66,26 @@ def explore_most_played_decks(df: DataFrame,
                               user_deck_col: str,
                               oppo_deck_col: str):
     """
-    This function will help you explore what the most repeated decks, for both user and oppo, so that you can decide how to set the archetype tags (i.e. which decks go to each archetype).
+    Explore which deck names appear most frequently in both the user and
+    opponent columns, helping you decide how to define archetype keyword
+    dictionaries.
 
-    Returns: the list of the most played decks in both user and oppo and a table with counting of the most repeated entries common to both user and oppo.
+    This function is intended as an **exploratory utility**: run it on a
+    cleaned DataFrame to see which specific deck names dominate before calling
+    :func:`create_new_columns` with a keyword dictionary.
+
+    Args:
+        df (DataFrame): Cleaned match DataFrame (typically the output of
+            :func:`clean_raw_csv`).
+        user_deck_col (str): Column name for the player's deck entries.
+        oppo_deck_col (str): Column name for the opponent's deck entries.
+
+    Returns:
+        tuple:
+            - most_played_common (list[str]): Deck names that appear in both
+              the user and opponent columns, sorted by frequency.
+            - common_counts (DataFrame): A two-column table (``user_deck``,
+              ``oppo_deck``) with the row-count of each common deck name.
     """
 
     df_new = df.copy()
@@ -68,12 +113,33 @@ def clean_raw_csv(df: DataFrame,
                   oppo_deck_col: str,
                   ):
     """
-    This is the main function to clean the .csv you have collected. It aims to homogenise the inputs of user and oppo decks, avoiding things like some entries being izzet and other ur or ru and so on
+    Main entry point for cleaning a raw collected ``.csv`` file before any
+    analysis.
+
+    The function performs three sequential normalisation steps:
+
+    1. **Lowercase** — both deck columns are lowercased so that string
+       comparisons are case-insensitive (``'Izzet'`` and ``'izzet'`` become
+       the same entry).
+    2. **WUBRG prefix normalisation** — color-letter prefixes are reordered to
+       the canonical MTG sequence via :func:`normalise_wubrg`.
+    3. **Guild / shard normalisation** — named multi-color identities and bare
+       single-color letters are translated to color-prefix form via
+       :func:`normalise_guild`.
+
+    Args:
+        df (DataFrame): Raw match DataFrame as loaded from the collected CSV.
+        user_deck_col (str): Name of the column containing the player's deck names.
+        oppo_deck_col (str): Name of the column containing the opponent's deck names.
+
+    Returns:
+        DataFrame: Cleaned copy of the input with both deck columns homogenised.
     """
 
     df_new = df.copy()
 
-    # Important, lowercase user_deck and oppo_deck, so that manipulation is easier, as the inputs are strings
+    # Important: lowercase user_deck and oppo_deck so that manipulation is easier,
+    # as the inputs are strings
     df_new[[user_deck_col, oppo_deck_col]] = df_new[[user_deck_col, oppo_deck_col]].apply(lambda s: s.str.lower())
 
     # Then normalise WUBRG and guild names
@@ -97,14 +163,64 @@ def create_new_columns(df: DataFrame,
                        new_cols: str | list,
                        def_tag: str
                        ):
+    """
+    Enrich a cleaned match DataFrame with three additional layers of information
+    required for downstream analysis:
+
+    1. **Time window index** — an integer ``time_window`` column is added by
+       :func:`~mtga_viz.utils.helpers.add_hour_index`, bucketing each row into
+       an ``interval_window``-hour slot relative to the first timestamp.
+    2. **Archetype labels** — for each pair in ``source_cols`` / ``new_cols``,
+       :func:`~mtga_viz.utils.helpers.assign_archetype` scans the deck-name
+       column against ``keyword_dict`` and writes the matched archetype (or
+       ``def_tag``) into the new column.
+    3. **Run normalisation** — :func:`~mtga_viz.utils.helpers.count_runs` is
+       called to confirm run integrity; its enriched DataFrame copy is returned.
+
+    This is typically the **second step** in the pipeline, called after
+    :func:`clean_raw_csv`::
+
+        df_clean = clean_raw_csv(df, user_deck_col='user_deck', oppo_deck_col='oppo_deck')
+        df_enriched, trophies, run_counts, length_event, intervals = create_new_columns(
+            df_clean,
+            time_col='message_time_stamp',
+            interval_window=1,
+            run_col='run_result',
+            source_cols=['user_deck', 'oppo_deck'],
+            keyword_dict=dictionaries,
+            new_cols=['user_deck_arch', 'oppo_deck_arch'],
+            def_tag='other',
+        )
+
+    Args:
+        df (DataFrame): Cleaned match DataFrame, output of :func:`clean_raw_csv`.
+        time_col (str): Name of the timestamp column used to build the time index.
+        interval_window (int): Bucket size in hours for the time window index.
+        run_col (str): Name of the column containing run results (e.g. ``'run_result'``).
+        source_cols (str | list[str]): Column(s) whose values will be matched
+            against ``keyword_dict`` to assign archetypes.
+        keyword_dict (dict): Mapping of ``{archetype_label: [keyword, ...]}``,
+            passed directly to :func:`~mtga_viz.utils.helpers.assign_archetype`.
+        new_cols (str | list[str]): Name(s) of the new archetype columns to create.
+            Must have the same length as ``source_cols``.
+        def_tag (str): Default archetype label for rows that match no keyword
+            (e.g. ``'other'``).
+
+    Returns:
+        DataFrame: Enriched copy of the input with ``time_window``, archetype
+        columns, and the run-integrity fields added by ``count_runs``.
+
+    Raises:
+        ValueError: If ``source_cols`` and ``new_cols`` have different lengths.
+    """
 
     df_new = df.copy()
 
     # First, add a column with an hour index to track all the hours of the event
     df_w_hour_index, _, _ = add_hour_index(df_new, time_col, interval_window)
 
-    # Then, assign the archetypes to both the user and oppo decks. This creates two new columns
-
+    # Then, assign the archetypes to both the user and oppo decks.
+    # This creates two new columns.
     sources = [source_cols] if isinstance(source_cols, str) else list(source_cols)
     news = [new_cols] if isinstance(new_cols, str) else list(new_cols)
 

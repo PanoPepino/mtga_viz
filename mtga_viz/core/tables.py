@@ -7,19 +7,48 @@ from mtga_viz.utils.helpers import count_runs, add_hour_index
 
 
 def get_table_wr_error(df: DataFrame,
-                       result_col: str,  # The column with the results
-                       study_col: str,  # The column to study (user_deck or user_deck_arch)
+                       result_col: str,
+                       study_col: str,
                        alpha=0.05) -> DataFrame:
     """
-    Given a Dataframe and a column of study, explore the overall win rate, statistical error and confidence level of the results.
+    Compute per-deck win rate with Wilson confidence intervals and a
+    qualitative confidence label.
+
+    For each unique entry in ``study_col``, the function:
+
+    1. Parses ``result_col`` (expected format ``'W-L'``, e.g. ``'2-1'``) to
+       determine whether the player won each match.
+    2. Aggregates match counts and win counts.
+    3. Computes the win rate and a Wilson confidence interval at level
+       ``1 - alpha``.
+    4. Assigns a human-readable ``confidence`` label based on sample size.
+
+    Typical usage::
+
+        table = get_table_wr_error(df_enriched,
+                                   result_col='result_vs_oppo',
+                                   study_col='user_deck')
 
     Args:
-        df (DataFrame): The dataframe to pass. Probably the most general one.
-        result_col (str): The column where the results (2-0, 2-1, etc) are.
-        study_col (str): The column (user_deck or user_deck_archetype) to analyse.
+        df (DataFrame): Enriched match DataFrame (output of
+            :func:`~mtga_viz.core.database_manipulation.create_new_columns`).
+        result_col (str): Column containing match results in ``'W-L'`` format
+            (e.g. ``'result_vs_oppo'``).
+        study_col (str): Column to group by — typically ``'user_deck'`` or
+            ``'user_deck_arch'``.
+        alpha (float, optional): Significance level for the Wilson interval.
+            Defaults to ``0.05`` (95 % confidence).
 
     Returns:
-        DataFrame: for each unique element in study col, get columns: study_col, matches_played, wr, error, confidence
+        DataFrame: One row per unique ``study_col`` value, sorted descending by
+        ``matches_played``, with columns:
+
+        - ``study_col`` — deck or archetype name.
+        - ``matches_played`` — total valid matches parsed.
+        - ``wr`` — win rate in percent, rounded to 1 decimal.
+        - ``wr_error`` — half-width of the Wilson CI in percent, rounded to 1 decimal.
+        - ``confidence`` — ``'very low'`` (<20), ``'low'`` (20–49),
+          ``'medium'`` (50–74), or ``'high'`` (75+).
     """
 
     # Parse the wins and losses and group
@@ -39,7 +68,7 @@ def get_table_wr_error(df: DataFrame,
     # Compute the win rate
     win_tbl["wr"] = 100 * win_tbl["matches_won"] / win_tbl["matches_played"]
 
-    # Compute the error given your confidence proportionaly (we are looking at 95%)
+    # Compute the error given your confidence proportionally (we are looking at 95%)
     ci = win_tbl.apply(
         lambda r: proportion_confint(
             count=int(r["matches_won"]),
@@ -75,19 +104,40 @@ def get_table_wr_error(df: DataFrame,
 def get_table_runs(df: DataFrame,
                    user_deck_col: str = "user_deck",
                    run_col: str = 'run_result',
-                   new_run_col_names: dict = None  # How to call the set of columns with the run iterations
+                   new_run_col_names: dict = None
                    ):
     """
-    This function will take the clean and column added match dataframe and extract the relevant counting of runs, games played and different wins
+    Summarise run performance per deck: total runs, games played, and a
+    breakdown of how many runs of each type (``'0-1'``, ``'1-1'``, …,
+    ``'7-0'``) each deck completed.
+
+    Run counts are *normalised* — each row count is divided by the number of
+    games that make up that run result — so the figures represent actual
+    completed runs rather than raw row counts. See
+    :func:`~mtga_viz.utils.helpers.count_runs` for the normalisation logic.
 
     Args:
-        df (DataFrame): 
-        user_deck_col (str, optional): Defaults to "user_deck".
-        run_col (str, optional): Defaults to 'run_result'.
-        new_run_col_names (dict, optional): Defaults to None
+        df (DataFrame): Enriched match DataFrame (output of
+            :func:`~mtga_viz.core.database_manipulation.create_new_columns`).
+        user_deck_col (str, optional): Column grouping rows by deck.
+            Defaults to ``'user_deck'``.
+        run_col (str, optional): Column with run results in ``'W-L'`` format.
+            Defaults to ``'run_result'``.
+        new_run_col_names (dict, optional): Mapping from raw run-result strings
+            to human-friendly column names, e.g.
+            ``{'7-0': '7_win', '6-1': '6_win', ...}``.  
+            If ``None``, a default mapping covering ``'0-1'`` through ``'7-0'``
+            is used.
 
     Returns:
-        table_runs: The table with information about the runs.
+        DataFrame: One row per deck, sorted descending by ``total_runs``,
+        with columns:
+
+        - ``user_deck_arch`` — archetype label of the deck.
+        - ``user_deck`` — specific deck name.
+        - ``total_runs`` — sum of all normalised run counts.
+        - ``games_played`` — total number of individual game rows.
+        - One column per run type (renamed via ``new_run_col_names``).
     """
 
     # Set a simple dict to substitute string results of type X-Y to just the number of wins
@@ -142,18 +192,41 @@ def get_table_event_summary(
         time_col="message_time_stamp",
         interval_window=1):
     """
-    This function will return a simple summary of the event, with the amount of participating players, run and game counters, overall winrate and different runs counters.
+    Return a high-level summary of the entire event as a labelled Series.
+
+    Combines three helpers to produce a single-row snapshot:
+
+    - :func:`~mtga_viz.utils.helpers.add_hour_index` — for event duration.
+    - :func:`~mtga_viz.utils.helpers.count_runs` — for run breakdown.
+    - Direct parsing of ``result_col`` — for overall win rate.
+
+    All fields except ``overall_winrate`` are cast to ``int``.
 
     Args:
-        df (DataFrame): The clean and enhanced dataframe.
-        user_name_col (str, optional): The column with user names info. Defaults to "user_name".
-        run_col (str, optional): Defaults to "run_result".
-        result_col (str, optional): Column with 2-0, 2-1 and so on results. Defaults to "result_vs_oppo".
-        time_col (str, optional): Defaults to "message_time_stamp".
-        interval_window (int, optional): Defaults to 1.
+        df (DataFrame): Enriched match DataFrame (output of
+            :func:`~mtga_viz.core.database_manipulation.create_new_columns`).
+        user_name_col (str, optional): Column with participant usernames, used
+            to count unique players. Defaults to ``'user_name'``.
+        run_col (str, optional): Column with run results. Defaults to
+            ``'run_result'``.
+        result_col (str, optional): Column with individual match results in
+            ``'W-L'`` format. Defaults to ``'result_vs_oppo'``.
+        time_col (str, optional): Timestamp column forwarded to
+            :func:`~mtga_viz.utils.helpers.add_hour_index`.
+            Defaults to ``'message_time_stamp'``.
+        interval_window (int, optional): Hour-bucket width forwarded to
+            :func:`~mtga_viz.utils.helpers.add_hour_index`. Defaults to ``1``.
 
     Returns:
-        Series:
+        Series: Named scalar fields:
+
+        - ``players`` — number of unique participants.
+        - ``runs`` — total number of completed runs (normalised).
+        - ``games`` — total number of game rows.
+        - ``overall_winrate`` — event-wide win rate in percent (float).
+        - One entry per distinct run type (e.g. ``'4-1'``, ``'7-0'``) with its
+          normalised run count.
+        - ``event_duration`` — total event length in whole hours.
     """
 
     df_time, length_event, _ = add_hour_index(
@@ -196,23 +269,49 @@ def get_window_deck_table(
     other_label: str = "other",
 ) -> pd.DataFrame:
     """
-    For each time_window, this function will do the following:
-    - Keep the top N decks by whole-event game share
-    - Gather all other decks into the tag 'other_label'
-    - Compute each group's share of games inside that time_window
-    - Compute % of games in that time_window with respect the total amount of games
-    - count 7-0 trophies for each group in that time_window
+    Build a per-time-window deck-popularity table, keeping the top ``N`` decks
+    by whole-event game share and collapsing the rest into ``other_label``.
+
+    Game share is used (rather than run share) because each game row belongs
+    to exactly one ``time_window``, avoiding any double-counting across
+    intervals that run-normalised counts could introduce.
+
+    For each ``time_window`` the function computes:
+
+    - The share (%) of games that each top-N deck (or the ``other`` bucket)
+      accounts for within that interval.
+    - The share (%) of total-event games that the interval itself represents
+      (``share_games_total``), useful for spotting high/low-activity periods.
+    - The number of completed 7-0 trophy runs per deck group per interval.
 
     Args:
-        df (pd.DataFrame): 
-        time_col (str, optional): Defaults to "time_window".
-        deck_col (str, optional): Defaults to "user_deck".
-        run_col (str, optional): Defaults to "run_result".
-        top_n (int, optional): Defaults to 20.
-        other_label (str, optional): Defaults to "other".
+        df (pd.DataFrame): Enriched match DataFrame (output of
+            :func:`~mtga_viz.core.database_manipulation.create_new_columns`).
+            Must contain a ``time_window`` integer column produced by
+            :func:`~mtga_viz.utils.helpers.add_hour_index`.
+        time_col (str, optional): Name of the time-bucket column.
+            Defaults to ``'time_window'``.
+        deck_col (str, optional): Column whose values represent deck names.
+            Defaults to ``'user_deck'``.
+        run_col (str, optional): Column with run results used to count trophies.
+            Defaults to ``'run_result'``.
+        top_n (int, optional): Number of most-played decks (by whole-event game
+            share) to track individually. All other decks are merged into
+            ``other_label``. Defaults to ``20``.
+        other_label (str, optional): Label assigned to the catch-all bucket of
+            decks outside the top ``N``. Defaults to ``'other'``.
 
     Returns:
-        pd.DataFrame: 
+        pd.DataFrame: Sorted by ``time_window`` ascending, then ``share``
+        descending, with columns:
+
+        - ``time_window`` — integer hour bucket.
+        - ``deck`` — deck name or ``other_label``.
+        - ``share`` — percentage of games in this interval played by this deck group.
+        - ``share_games_total`` — percentage of all event games that occurred
+          in this interval.
+        - ``trophy`` — number of completed 7-0 runs for this deck group in
+          this interval.
     """
 
     # Top N decks by whole-event game share
@@ -241,7 +340,7 @@ def get_window_deck_table(
     # Compute total games and share within each interval
     table["total_games_in_interval"] = table.groupby(time_col)["games"].transform("sum")
     table["share"] = (100 * table["games"] / table["total_games_in_interval"]).round(1)
-    table['share_games_total'] = (100*table["total_games_in_interval"]/len(df[deck_col])).round(1)
+    table['share_games_total'] = (100 * table["total_games_in_interval"] / len(df[deck_col])).round(1)
 
     return (
         table[[time_col, "deck", "share", 'share_games_total', "trophy"]]

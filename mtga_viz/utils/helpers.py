@@ -10,17 +10,31 @@ def add_hour_index(df,
                    time_col,
                    interval_window: int):
     """
-    This function reads the the time_col (i.e. message_timestamp) of the dataframe and creates a new column with how many hours elapsed since begining of the recording. window is in charge of controlling the period of time you want to divide your data by.
+    Read the time_col (i.e. message_timestamp) and create a new integer column
+    ``time_window`` representing how many full ``interval_window``-hour buckets
+    have elapsed since the first recorded timestamp.
+
+    This is the primary function for slicing event data into hourly (or
+    multi-hour) intervals before computing per-interval statistics.
 
     Example:
+        - If the total recording spans 100 hours and ``interval_window=1``,
+          the data is divided into 100 one-hour periods.
+        - If ``interval_window=24``, each bucket covers one calendar day.
 
-    - If total dataframe is 100 hours, and the interval window is 1 hour, it will divide the whole time span in 100 periods. If you then have weeks of recording, you can perhaps then say that window is 24h or more.
+    Args:
+        df (DataFrame): Raw or cleaned match DataFrame containing a timestamp column.
+        time_col (str): Name of the column with UTC-compatible timestamp strings.
+        interval_window (int): Width of each time bucket in hours.
 
-    Return:
+    Returns:
+        tuple:
+            - df (DataFrame): Copy of the input with a new ``time_window`` int column.
+            - length_event (int): Total event duration in hours, rounded to the nearest hour.
+            - intervals (int): Total number of distinct time buckets present in the data.
 
-    - The new df with the new column
-    - Total length event, rounded
-    - The amount of intervals of the event
+    Note:
+        Return order matters — unpack as ``df, length_event, intervals``.
     """
 
     df = df.copy()
@@ -31,7 +45,7 @@ def add_hour_index(df,
     elapsed_hours = (df[time_col] - start_time).dt.total_seconds() / 3600.0
 
     df["time_window"] = (elapsed_hours // interval_window).astype("int64")
-    intervals = df['time_window'].max()+1
+    intervals = df['time_window'].max() + 1
 
     length_event = round((df[time_col].iloc[-1] - start_time).total_seconds() / 3600.0)
 
@@ -40,7 +54,22 @@ def add_hour_index(df,
 
 def is_trophy(df, run_col):
     """
-    Simply checks if a run is a trophy and counts how many trophies obtained in the whole recording.
+    Check whether each row belongs to a trophy run (7-0) and count the total
+    number of trophies in the recording.
+
+    A trophy consists of 7 consecutive wins with no losses, so a 7-0 run
+    generates exactly 7 rows in the DataFrame — the trophy count is therefore
+    the raw row-count of ``'7-0'`` divided by 7.
+
+    Args:
+        df (DataFrame): Match DataFrame containing a run-result column.
+        run_col (str): Name of the column with run results (e.g. ``'run_result'``).
+
+    Returns:
+        tuple:
+            - df (DataFrame): Copy of the input with a new boolean-like
+              ``is_trophy`` column (``'yes'`` / ``'no'``).
+            - amount_trophies (float): Number of complete 7-0 trophies.
     """
 
     df = df.copy()
@@ -51,7 +80,26 @@ def is_trophy(df, run_col):
 
 def mtg_prefix_normalisation(value):
     """
-    This function checks a given string, inspects the 0-th element and evaluates if it belongs to the official ordering of colors by MTG (in lower case). if not, it reorders.
+    Enforce the official WUBRG color-ordering on the color-prefix of a deck
+    name string.
+
+    MTG uses a canonical color order (White → Blue → Black → Red → Green,
+    i.e. ``wubrg``). If the first token of ``value`` is composed entirely of
+    those letters (e.g. ``'ur'``, ``'rbw'``), it is reordered to match the
+    canonical sequence. Non-color prefixes are left unchanged.
+
+    Example::
+
+        mtg_prefix_normalisation('ur tempo')  # → 'ur tempo' (already correct)
+        mtg_prefix_normalisation('ru tempo')  # → 'ur tempo'
+        mtg_prefix_normalisation('bg stompy') # → 'bg stompy'
+
+    Args:
+        value (str): A deck-name string, typically lowercase.
+
+    Returns:
+        str: The same string with its color prefix reordered to WUBRG, or the
+        original value if no reordering is needed.
     """
 
     if not isinstance(value, str) or not value:
@@ -71,20 +119,41 @@ def mtg_prefix_normalisation(value):
 
 def mtg_guild_normalisation(value):
     """
-    Take Izzet, Dimir, Sultai wording to the right ordering colors, in lower case.
+    Translate Ravnica guild names and Khans/Tarkir shard/wedge names to their
+    canonical WUBRG color-prefix equivalents (all lowercase).
+
+    Handles three cases in order:
+        1. A single bare color letter followed by a space and a deck tag is
+           prefixed with ``'mono'`` (e.g. ``'b stompy'`` → ``'mono b stompy'``).
+        2. The first token matches a two-color Ravnica guild name (defined in
+           ``TWO_COLOR_GUILDS``) and is replaced by the corresponding color
+           pair prefix.
+        3. The first token matches a three-color Tarkir/Alara name (defined in
+           ``THREE_COLOR_GUILDS``) and is replaced by the corresponding triplet.
+
+    Example::
+
+        mtg_guild_normalisation('izzet tempo')   # → 'ur tempo'
+        mtg_guild_normalisation('sultai control') # → 'bgu control'
+        mtg_guild_normalisation('b stompy')       # → 'mono b stompy'
+
+    Args:
+        value (str): A deck-name string, typically lowercase.
+
+    Returns:
+        str: The normalised deck-name string, or the original value if no
+        known guild/shard name is found at the start.
     """
 
     if not isinstance(value, str) or not value:
         return value
 
-    # 1) Exactly: one of wurbg, then a space, then anything
+    # 1) Exactly: one of wubrg, then a space, then anything
     m = re.match(r'^([wubrg])\s+(.*)$', value)
     if m:
-
         return f"mono {m.group(1)} {m.group(2)}".rstrip()
 
     # 2) / 3) Replace family name only if it is the first token
-    value = value
     parts = value.split(" ", 1)
     first = parts[0]
     rest = parts[1] if len(parts) > 1 else ""
@@ -104,10 +173,40 @@ def assign_archetype(df: DataFrame,
                      new_col: str,
                      default_tag: str):
     """
-    For a given column `source_col`, check its entries against a dictionary where each key is the archetype and each item is a list with important words for each archetype (i.e. Tempo would contain a list like ['tempo', 'shadow', 'canadian'], etc). Then, it assigns the archetype to each entry.
+    Assign a broad archetype label to each row by matching the deck-name string
+    in ``source_col`` against a user-supplied keyword dictionary.
 
-    As the meta would shift from event to event, the dictionary is user defined.
+    For each entry, the function checks whether any keyword associated with an
+    archetype appears as a substring of the (lowercased) deck name. The first
+    matching archetype wins. If no keyword matches, the row receives
+    ``default_tag``.
+
+    As the metagame shifts from event to event, the keyword dictionary is
+    user-defined and should be updated accordingly.
+
+    Example keyword dict::
+
+        {
+            'tempo':   ['tempo', 'shadow', 'canadian'],
+            'aggro':   ['burn', 'zoo', 'energy'],
+            'control': ['control', 'stoneblade'],
+        }
+
+    Args:
+        df (DataFrame): Match DataFrame to annotate.
+        source_col (str): Column whose values are matched against the keywords
+            (e.g. ``'user_deck'`` or ``'oppo_deck'``).
+        keyword_dict (dict): Mapping of ``{archetype_label: [keyword, ...]}``.  
+            Keys are the archetype tag strings; values are lists of substrings
+            to search for in the deck name.
+        new_col (str): Name of the new column that will hold the archetype label.
+        default_tag (str): Fallback label used when no keyword matches
+            (e.g. ``'other'``).
+
+    Returns:
+        DataFrame: Copy of the input with ``new_col`` added.
     """
+
     def find_tag(x):
         if pd.isna(x):
             return default_tag
@@ -123,7 +222,30 @@ def assign_archetype(df: DataFrame,
 
 def count_runs(df, run_col):
     """
-    Checks if a run is a trophy, counts how many trophies were obtained, computes normalized run counts by dividing each row count by the total matches (wins + losses) that constitute that run result.
+    Normalise raw row counts into actual run counts and compute trophy totals.
+
+    In the raw data, each game within a run occupies its own row — a ``'4-1'``
+    run therefore contributes **5** rows. To recover the true number of runs,
+    each value-count is divided by ``wins + losses`` for that result string.
+    This is called the *normalised count*.
+
+    Trophy runs are identified as ``'7-0'`` and counted separately: because a
+    7-0 run produces 7 rows, ``amount_trophies = row_count('7-0') / 7``.
+
+    Args:
+        df (DataFrame): Match DataFrame containing a run-result column.
+        run_col (str): Name of the column with run results in ``'W-L'`` format
+            (e.g. ``'run_result'``).
+
+    Returns:
+        tuple:
+            - df (DataFrame): Unchanged copy of the input.
+            - amount_trophies (float): Number of complete 7-0 trophies.
+            - types_of_run (list[str]): All distinct run strings found, sorted
+              by total games then wins then losses.
+            - run_counts_out (Series): Raw row counts indexed by run string.
+            - normalized_run_counts (Series): Actual run counts (row count
+              divided by games per run) indexed by run string.
     """
 
     df = df.copy()
@@ -167,11 +289,22 @@ def count_runs(df, run_col):
 
 def list_to_table(items, n_cols=4):
     """
-    Transform any list or series to a simple table for cleaner visualisation.
+    Print any list or Series as a compact multi-column table for quick visual
+    inspection in a notebook or terminal.
+
+    Items are sorted alphabetically (case-insensitive) before being arranged
+    into rows of ``n_cols`` columns. Empty cells are padded with ``None``.
+
+    Args:
+        items (list | Series): Collection of string-representable values to display.
+        n_cols (int, optional): Number of columns in the output table. Defaults to 4.
+
+    Returns:
+        None: Prints directly to stdout via ``print``.
     """
 
     items = sorted(list(items), key=str.lower)
     rows = math.ceil(len(items) / n_cols)
     padded = items + [None] * (rows * n_cols - len(items))
-    table = pd.DataFrame([padded[i:i+n_cols] for i in range(0, len(padded), n_cols)])
+    table = pd.DataFrame([padded[i:i + n_cols] for i in range(0, len(padded), n_cols)])
     return print(table.to_string(index=False, header=False))
