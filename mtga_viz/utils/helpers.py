@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import re
 
@@ -122,38 +123,55 @@ def assign_archetype(df: DataFrame,
 
 def count_runs(df, run_col):
     """
-    Checks if a run is a trophy, counts how many trophies were obtained in the whole recording, computes normalized run counts by dividing each run count by the number of victories in that run result, and sorts run outputs by numeric run order. If victories == 0, divide by 1 instead.
+    Checks if a run is a trophy, counts how many trophies were obtained, computes normalized run counts by dividing each row count by the total matches (wins + losses) that constitute that run result.
     """
 
     df = df.copy()
 
-    df["is_trophy"] = df[run_col].eq("7-0").map({True: "yes", False: "no"})
-    amount_trophies = df["is_trophy"].eq("yes").sum() / 7
+    # Amount of trophies (7-0 runs)
+    # Assuming every 7-0 row is part of a 7-match set
+    amount_trophies = df[run_col].eq("7-0").sum() / 7
 
     run_counts = df[run_col].value_counts(dropna=False)
 
-    wins = run_counts.index.to_series().str.extract(r"^(\d+)").astype(int)[0]
-    denom = wins.replace(0, 1)
-
-    normalized_run_counts = run_counts / denom.values
-
     run_summary = pd.DataFrame({
         "run": run_counts.index,
-        "count": run_counts.values,
-        "normalized_count": normalized_run_counts.values
+        "count": run_counts.values
     })
 
+    # Split wins and losses
     wins_losses = run_summary["run"].str.split("-", expand=True).astype(int)
     run_summary["wins"] = wins_losses[0]
     run_summary["losses"] = wins_losses[1]
 
+    # (e.g., a 6-1 run has 7 rows, a 2-1 run has 3 rows)
+    run_summary["games_expected_per_run"] = run_summary["wins"] + run_summary["losses"]
+
+    # Handle edge case: if someone entered "0-0" or data is empty to avoid division by zero
+    run_summary["denom"] = run_summary["games_expected_per_run"].replace(0, 1)
+
+    # Calculate actual number of runs
+    run_summary["normalized_count"] = run_summary["count"] / run_summary["denom"]
+
     run_summary = run_summary.sort_values(
-        by=["wins", "losses"],
-        ascending=[True, True]
+        by=["games_expected_per_run", "wins", "losses"],
+        ascending=[True, True, True]
     ).reset_index(drop=True)
 
     types_of_run = run_summary["run"].tolist()
-    run_counts = run_summary.set_index("run")["count"]
+    run_counts_out = run_summary.set_index("run")["count"]
     normalized_run_counts = run_summary.set_index("run")["normalized_count"]
 
-    return df, amount_trophies, types_of_run, run_counts, normalized_run_counts
+    return df, amount_trophies, types_of_run, run_counts_out, normalized_run_counts
+
+
+def list_to_table(items, n_cols=4):
+    """
+    Transform any list or series to a simple table for cleaner visualisation.
+    """
+
+    items = sorted(list(items), key=str.lower)
+    rows = math.ceil(len(items) / n_cols)
+    padded = items + [None] * (rows * n_cols - len(items))
+    table = pd.DataFrame([padded[i:i+n_cols] for i in range(0, len(padded), n_cols)])
+    return print(table.to_string(index=False, header=False))

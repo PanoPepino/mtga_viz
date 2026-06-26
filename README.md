@@ -23,8 +23,6 @@ It targets 2 different competitive modes in MTG Arena:
 
 # To Do
 
-- [ ] Create function to apply Archetype tags. (Better to see first types of deck in notebook and decide)
-
 # Idea of package
 
 Target: Create a package for easy visualisation for MTGA competitive gaming. 

@@ -101,7 +101,7 @@ def create_new_columns(df: DataFrame,
     df_new = df.copy()
 
     # First, add a column with an hour index to track all the hours of the event
-    df_w_hour_index, length_event, intervals = add_hour_index(df_new, time_col, interval_window)
+    df_w_hour_index, _, _ = add_hour_index(df_new, time_col, interval_window)
 
     # Then, assign the archetypes to both the user and oppo decks. This creates two new columns
 
@@ -114,9 +114,9 @@ def create_new_columns(df: DataFrame,
     df_w_arch = df_w_hour_index
 
     for source, new in zip(sources, news):
-        df_w_arch = assign_archetype(df_w_arch, source, keyword_dict, new, def_tag)
+        df_w_arch = assign_archetype(df_w_hour_index, source, keyword_dict, new, def_tag)
 
     # Finally, check what are trophies and not
-    df_w_trophy, amount_trophies, types_of_run, _, normalised_run_counts = count_runs(df_w_arch, run_col)
+    df_w_trophy, _, _, _, _ = count_runs(df_w_arch, run_col)
 
-    return df_w_trophy, length_event, intervals, amount_trophies, normalised_run_counts
+    return df_w_trophy
