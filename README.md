@@ -7,8 +7,9 @@ Package to create clean and insightful dashboards for competitive gaming for MTG
 
 It targets 2 different competitive modes in MTG Arena:
 
-- _Ladder_: Based on any collected database with ladder results, display interesting 
+- _Ladder_: Based on any collected database with ladder results, display insightful graphics
 - _Metagame_: Do you want to collect and display data on plenty of runs of a given Metagame Challenge? 
+- _Tournament_: Same as before, but with match matrix and other things.
 
 
 ## Usage instructions
