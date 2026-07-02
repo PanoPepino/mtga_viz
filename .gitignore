@@ -1,7 +1,43 @@
+# macOS
+.DS_Store
 
-
-.figs/
+# Python
 __pycache__/
-mtga_viz.egg-info
+*.py[cod]
+*$py.class
 
+# Build / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
 
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / local config
+.env
+.env.*
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Project outputs
+figs/
+mtga_viz/figs/
+
+# Optional: ignore local data files if they are reproducible or large
+# data/
+# mtga_viz/data/
