@@ -36,8 +36,9 @@ htmlcov/
 
 # Project outputs
 figs/
+figs
 mtga_viz/figs/
 
 # Optional: ignore local data files if they are reproducible or large
-# data/
+data/
 # mtga_viz/data/
