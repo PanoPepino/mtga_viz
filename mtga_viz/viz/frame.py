@@ -31,6 +31,7 @@ class FramedPlot(Group):
             title_color (_type_, optional): 
             stroke_width (int, optional):
         """
+
         super().__init__(**kwargs)
 
         self.frame = SurroundingRectangle(

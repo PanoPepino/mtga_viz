@@ -1,9 +1,13 @@
+# Here you will find all required functions to manipulate the full .csv file before performing the analysis.
+# Sub-functions within can be found at utils/helpers_*.py
+
+
 import pandas as pd
 from pandas import DataFrame
-from ..utils.helpers import add_hour_index, assign_archetype, count_runs, mtg_guild_normalisation, mtg_prefix_normalisation
 
-# Here you will find all required functions to manipulate the full .csv file before performing the analysis.
-# Sub-functions within can be found at utils/helpers.py
+from mtga_viz.utils.tournament_helpers import build_paths, load_tournament_csv
+from mtga_viz.utils.challenge_helpers import add_hour_index, count_runs
+from mtga_viz.utils.common_helpers import assign_archetype, mtg_guild_normalisation, mtg_prefix_normalisation, relabel_name
 
 
 def normalise_wubrg(df,
@@ -236,3 +240,69 @@ def create_new_columns(df: DataFrame,
     df_w_trophy, _, _, _, _ = count_runs(df_w_arch, run_col)
 
     return df_w_trophy
+
+
+def load_and_merge_data(
+    tournament_directory=None,
+    league_directory=None,
+    tournament_files=None,
+    league_files=None,
+) -> pd.DataFrame:
+    """
+    Function that loads all necessary information coming from different tournaments and league. It uses :func:`build_paths` to create proper paths for all files. For tournament files, it will mirror results, for easier match matrix computation later.
+
+    Args:
+        tournament_directory (str): Defaults to None.
+        league_directory (str): Defaults to None.
+        tournament_files (list[str]): Defaults to None.
+        league_files (list[str]): Defaults to None.
+
+    Returns:
+        pd.DataFrame:The dataframe with all matches merged and mirroed if they belong to tournament files
+    """
+
+    tournament_paths = build_paths(tournament_directory, tournament_files)
+    league_paths = build_paths(league_directory, league_files)
+
+    parts = []
+
+    for path in tournament_paths:
+        parts.append(load_tournament_csv(path))
+
+    for path in league_paths:
+        parts.append(pd.read_csv(path))
+
+    if not parts:
+        return pd.DataFrame(columns=[
+            "match_created_utc",
+            "user_deck",
+            "oppo_deck",
+            "result_vs_oppo",
+        ])
+
+    return pd.concat(parts, ignore_index=True)
+
+
+def relabel_decks(df,
+                  user_col,
+                  oppo_col,
+                  new_names) -> DataFrame:
+    """
+    Simple function to group decks under some labels:
+    ex: ['ub tempo', 'ubr tempo' , 'wub tempo'] -> 'ub tempo'
+
+    Args:
+        df (_type_): 
+        user_col (str): the user_deck column
+        oppo_col (str): the oppo_deck column
+        new_names (dict): the dictionary to substitute names
+
+    Returns:
+        DataFrame: 
+    """
+
+    df_new = df.copy()
+    df_new[user_col] = df_new[user_col].apply(relabel_name, args=(new_names,))
+    df_new[oppo_col] = df_new[oppo_col].apply(relabel_name, args=(new_names,))
+
+    return df_new

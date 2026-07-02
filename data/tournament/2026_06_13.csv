@@ -13,7 +13,7 @@ match_created_utc,user_deck,oppo_deck,result_vs_oppo
 2026-06-13T15:31:46+00:00,Izzet Tempo,Izzet Phoenix,2-0
 2026-06-13T16:53:24+00:00,Mono-Black Stompy,Colorless Eldrazi,2-1
 2026-06-13T16:17:54+00:00,Dimir Reanimator,Raph Reanimator,2-0
-2026-06-13T16:16:15+00:00,Colorless Eldrazi,Mono-Black Reanimator,0-2
+2026-06-13T16:16:15+00:00,Colorless Eldrazi,Mono-Black Stompy,0-2
 2026-06-13T16:25:19+00:00,Dimir Tempo,Mardu Energy,2-1
 2026-06-13T16:31:46+00:00,Mardu Energy,Izzet Easel,2-1
 2026-06-13T16:15:07+00:00,Izzet Tempo,Izzet Sneak and Show,1-2
@@ -26,7 +26,7 @@ match_created_utc,user_deck,oppo_deck,result_vs_oppo
 2026-06-13T16:11:40+00:00,Dimir Reanimator,Mono-Black Stompy,1-2
 2026-06-13T17:31:17+00:00,Mono-Black Stompy,Izzet Sneak and Show,1-2
 2026-06-13T17:20:03+00:00,Dimir Tempo,Mardu Energy,0-2
-2026-06-13T17:13:47+00:00,Mono-Black Reanimator,Dimir Reanimator,2-1
+2026-06-13T17:13:47+00:00,Mono-Black Stompy,Dimir Reanimator,2-1
 2026-06-13T17:24:27+00:00,Dimir Tempo,Colorless Eldrazi,2-0
 2026-06-13T17:04:41+00:00,Colorless Eldrazi,Mardu Energy,0-2
 2026-06-13T17:17:05+00:00,Mono-Black Stompy,Dimir Tempo,2-0
@@ -36,7 +36,7 @@ match_created_utc,user_deck,oppo_deck,result_vs_oppo
 2026-06-13T17:05:56+00:00,Izzet Sneak and Show,Izzet Tempo,2-0
 2026-06-13T17:06:57+00:00,Mardu Energy,Mono-Red Burn,1-2
 2026-06-13T17:27:36+00:00,Dimir Reanimator,Simic Affinity,2-0
-2026-06-13T18:07:29+00:00,Mono-Black Reanimator,Izzet Sneak and Show,2-1
+2026-06-13T18:07:29+00:00,Mono-Black Stompy,Izzet Sneak and Show,2-1
 2026-06-13T18:12:33+00:00,Mardu Energy,Dimir Tempo,1-2
 2026-06-13T17:50:41+00:00,Mono-Black Stompy,Mardu Energy,2-0
 2026-06-13T17:50:52+00:00,Raph Reanimator,Mardu Energy,2-1
@@ -47,7 +47,7 @@ match_created_utc,user_deck,oppo_deck,result_vs_oppo
 2026-06-13T17:50:30+00:00,Dimir Tempo,Izzet Easel,2-0
 2026-06-13T18:03:05+00:00,Colorless Eldrazi,Izzet Easel,2-1
 2026-06-13T17:56:47+00:00,Simic Affinity,Mono-White Stompy,1-2
-2026-06-13T18:46:43+00:00,Dimir Tempo,Mono-Black Reanimator,1-2
+2026-06-13T18:46:43+00:00,Dimir Tempo,Mono-Black Stompy,1-2
 2026-06-13T18:29:22+00:00,Mardu Energy,Izzet Sneak and Show,2-0
 2026-06-13T18:41:34+00:00,Dimir Tempo,Izzet Sneak and Show,1-2
 2026-06-13T18:36:17+00:00,Mono-Black Stompy,Raph Reanimator,2-1
@@ -56,10 +56,10 @@ match_created_utc,user_deck,oppo_deck,result_vs_oppo
 2026-06-13T18:31:00+00:00,Dimir Reanimator,Mardu Energy,2-1
 2026-06-13T18:51:43+00:00,Mono-Black Stompy,Izzet Phoenix,0-2
 2026-06-13T18:44:51+00:00,Dimir Tempo,Mono-Red Burn,2-1
-2026-06-13T19:09:45+00:00,Mono-Black Reanimator,Dimir Tempo,2-0
+2026-06-13T19:09:45+00:00,Mono-Black Stompy,Dimir Tempo,2-0
 2026-06-13T19:15:26+00:00,Mono-Black Stompy,Izzet Sneak and Show,2-1
 2026-06-13T19:27:29+00:00,Dimir Tempo,Dimir Reanimator,1-2
 2026-06-13T19:24:11+00:00,Mardu Energy,Izzet Sneak and Show,1-2
-2026-06-13T19:50:03+00:00,Mono-Black Reanimator,Mono-Black Stompy,1-2
+2026-06-13T19:50:03+00:00,Mono-Black Stompy,Mono-Black Stompy,1-2
 2026-06-13T19:56:52+00:00,Dimir Reanimator,Izzet Sneak and Show,0-2
 2026-06-13T20:18:55+00:00,Mono-Black Stompy,Izzet Sneak and Show,2-1

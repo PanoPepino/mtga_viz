@@ -2,5 +2,6 @@
 
 .figs/
 __pycache__/
+mtga_viz.egg-info
 
 

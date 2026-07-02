@@ -1,7 +1,9 @@
-from .core.database_manipulation import explore_most_played_decks, clean_raw_csv, create_new_columns
-from .core.tables import get_table_runs, get_table_wr_error, get_table_event_summary, get_window_deck_table
+from mtga_viz.data.data_manipulation import explore_most_played_decks, clean_raw_csv, create_new_columns, load_and_merge_data, relabel_decks
+from mtga_viz.tables.common_tables import get_table_wr_error
+from mtga_viz.tables.challenge_tables import get_table_runs, get_table_event_summary, get_table_window_deck
+from mtga_viz.tables.tournament_tables import get_matchup_matrix
 
-from .utils.helpers import list_to_table
+from .utils.common_helpers import list_to_table
 
 
 __all__ = [
@@ -12,5 +14,8 @@ __all__ = [
     "get_table_runs",
     "get_table_wr_error",
     "get_table_event_summary",
-    "get_window_deck_table"
+    "get_table_window_deck",
+    "get_matchup_matrix",
+    "load_and_merge_data",
+    "relabel_decks"
 ]
