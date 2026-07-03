@@ -35,10 +35,13 @@ htmlcov/
 .idea/
 
 # Project outputs
-figs/
+.figs/
 figs
-mtga_viz/figs/
+.analysis
+analysis
+analysis/
+
 
 # Optional: ignore local data files if they are reproducible or large
-data/
+#data/
 # mtga_viz/data/

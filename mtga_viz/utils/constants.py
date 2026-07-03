@@ -2,15 +2,15 @@
 
 TWO_COLOR_GUILDS = {
     "azorius": "wu",
-    "boros": "rw",
+    "boros": "wr",
     "dimir": "ub",
     "golgari": "bg",
     "gruul": "rg",
     "izzet": "ur",
     "orzhov": "wb",
     "rakdos": "br",
-    "selesnya": "gw",
-    "simic": "gu",
+    "selesnya": "wg",
+    "simic": "ug",
 }
 
 THREE_COLOR_GUILDS = {

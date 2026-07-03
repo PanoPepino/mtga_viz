@@ -1,6 +1,6 @@
 from manim import *
-from mtga_viz.viz.constants import ARCH_COLORS, RESULT_COLORS
-from mtga_viz.viz.pin import Pin
+from mtga_viz.viz.utils.constants_viz import ARCH_COLORS, RESULT_COLORS
+from mtga_viz.viz.objects.pin import Pin
 
 
 class ResultHistogram(Group):

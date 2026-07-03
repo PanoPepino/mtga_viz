@@ -23,3 +23,11 @@ dependencies = [
 where = ["."]
 include = ["mtga_viz*"]
 exclude = ["scrapper*, data*, figs*, notebooks*"]
+
+
+[tool.setuptools.package-data]
+mtga_viz = [
+  "viz/assets/modern/*.jpg",
+  "viz/assets/timeless/*.jpg",
+  
+]
