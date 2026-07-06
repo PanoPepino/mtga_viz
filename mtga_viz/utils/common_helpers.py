@@ -196,3 +196,20 @@ def list_to_table(items, n_cols=4):
     padded = items + [None] * (rows * n_cols - len(items))
     table = pd.DataFrame([padded[i:i + n_cols] for i in range(0, len(padded), n_cols)])
     return print(table.to_string(index=False, header=False))
+
+
+def drop_missing_results(df: DataFrame, result_col: str = "result_vs_oppo") -> DataFrame:
+    """
+    Remove rows whose match result contains the literal text 'None'.
+
+    Args:
+        df (DataFrame): Input DataFrame.
+        result_col (str, optional): Column storing the match result.
+            Defaults to "result_vs_oppo".
+
+    Returns:
+        DataFrame: Copy of the input without rows where ``result_col`` contains 'None'.
+    """
+    df_new = df.copy()
+    mask = ~df_new[result_col].astype(str).str.contains("None", na=False)
+    return df_new.loc[mask].copy()

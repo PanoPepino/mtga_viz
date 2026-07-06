@@ -1,3 +1,4 @@
+from pathlib import Path
 from manim import *
 
 from mtga_viz.viz.utils.constants_viz import MTG_COLORS_PIN, ARCH_COLORS
@@ -15,7 +16,6 @@ def build_color_ring(
     """
     Based on a prefix name of the deck, it extracts the colors to create sections representing those colors.
     """
-
     n = len(letters)
     angle = TAU / n
     ring = VGroup()
@@ -43,12 +43,10 @@ class Pin(Group):
         color_label: dict = ARCH_COLORS,
         opa: float = 0.9,
         stroke_width: float = 2,
-        ** kwargs
+        **kwargs
     ):
         """
         Transform a packaged image into a circular visual pin and a border associated to its nature.
-
-
 
         Args:
             label (str): The name of the deck (taken from the DataFrame)
@@ -56,11 +54,22 @@ class Pin(Group):
             opa (float, optional): Opacity. Defaults to 0.9.
             stroke_width (float, optional): Defaults to 3.
         """
-
         super().__init__(**kwargs)
 
         self.asset_name = simple_parser(label)
         self.asset_path = get_asset_path(format, self.asset_name)
+
+        if not self.asset_path or not Path(self.asset_path).exists():
+            self.color_letters = extract_color_letters(self.asset_name)
+
+            self.final_pin = build_color_ring(
+                letters=self.color_letters,
+                outer_radius=0.22,
+                inner_radius=0.14,
+            )
+
+            self.add(self.final_pin)
+            return
 
         self.cut = Circle(
             fill_opacity=1,
@@ -99,12 +108,11 @@ class Pin(Group):
 
         else:
             self.color_letters = extract_color_letters(self.asset_name)
-            print(self.color_letters)
 
             self.sections = build_color_ring(
                 letters=self.color_letters,
-                outer_radius=self.border_radius+0.05,
-                inner_radius=self.inner_radius+0.07,
+                outer_radius=self.border_radius + 0.05,
+                inner_radius=self.inner_radius + 0.07,
             )
 
             self.border = Circle(

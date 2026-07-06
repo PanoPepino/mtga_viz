@@ -47,8 +47,8 @@ MTG_COLORS_PIN = {
 
 
 CONFIDENCE_COLORS = {
-    "2-0": "#2EC4B6",
-    "2-1": "#A3BE8C",
-    "1-2": "#F4A261",
-    "0-2": "#EF476F",
+    "high": "#2EC4B6",
+    "medium": "#A3BE8C",
+    "low": "#F4A261",
+    "very low": "#EF476F",
 }

@@ -12,11 +12,16 @@ def get_table_wr_error(df: DataFrame,
                        exclude_mirrors: bool = True,
                        # Can be modified depending on the heuristic discussion on what is a good confidence and not.
                        bins: list = [0, 10, 30, 50, float("inf")],
-                       alpha=0.05) -> DataFrame:
+                       alpha=0.05,
+                       top_n: int | None = None,
+                       include_rogue= False,
+                       rogue_label: str = "rogue") -> DataFrame:
     """
     Compute per-deck win rate with Wilson confidence intervals and a qualitative confidence label.
 
+
     For each unique entry in ``study_col``, the function:
+
 
     1. Parses ``result_col`` (expected format ``'W-L'``, e.g. ``'2-1'``) to
        determine whether the player won each match.
@@ -24,6 +29,11 @@ def get_table_wr_error(df: DataFrame,
     3. Computes the win rate and a Wilson confidence interval at level
        ``1 - alpha``.
     4. Assigns ``confidence`` label based on sample size.
+    5. If ``top_n`` is provided, keeps only the top ``top_n`` entries by
+       ``matches_played`` and aggregates the remaining entries into one row
+       labelled ``rogue_label`` before recomputing the win rate and Wilson
+       confidence interval for that aggregated row.
+
 
     Args:
         df (DataFrame): Enriched match DataFrame (output of
@@ -40,6 +50,11 @@ def get_table_wr_error(df: DataFrame,
         bins (list, optional): list of how many matches are required to establish a given label confidence (very low, low, medium, high)
         alpha (float, optional): Significance level for the Wilson interval.
             Defaults to ``0.05`` (95 % confidence).
+        top_n (int | None, optional): Number of most-played entries to keep.
+            If provided, all remaining entries are aggregated into one extra
+            row. Defaults to ``None``.
+        rogue_label (str, optional): Label used for the aggregated remaining
+            entries when ``top_n`` is provided. Defaults to ``"rogue"``.
 
 
     Returns:
@@ -47,15 +62,22 @@ def get_table_wr_error(df: DataFrame,
         ``matches_played``, with columns:
 
 
+
         - ``study_col`` — deck or archetype name.
         - ``matches_played`` — total valid matches parsed.
         - ``wr`` — win rate in percent, rounded to 1 decimal.
         - ``wr_error`` — half-width of the Wilson CI in percent, rounded to 1 decimal.
         - ``confidence``
+
+
+        If ``top_n`` is provided, the returned table contains the top
+        ``top_n`` rows plus one aggregated ``rogue_label`` row when applicable.
     """
+
 
     if exclude_mirrors:
         df = df[df[study_col] != df[oppo_col]].copy()
+
 
     # Parse the wins and losses and group
     win_tbl = (
@@ -69,10 +91,29 @@ def get_table_wr_error(df: DataFrame,
             matches_played=("won_match", "count"),
             matches_won=("won_match", "sum")
         )
+        .sort_values("matches_played", ascending=False)
+        .reset_index(drop=True)
     )
+
+
+    if top_n is not None and len(win_tbl) > top_n and include_rogue is True:
+        top_tbl = win_tbl.iloc[:top_n].copy()
+        tail_tbl = win_tbl.iloc[top_n:].copy()
+
+
+        rogue_row = pd.DataFrame({
+            study_col: [rogue_label],
+            "matches_played": [int(tail_tbl["matches_played"].sum())],
+            "matches_won": [int(tail_tbl["matches_won"].sum())],
+        })
+
+
+        win_tbl = pd.concat([top_tbl, rogue_row], ignore_index=True)
+
 
     # Compute the win rate
     win_tbl["wr"] = 100 * win_tbl["matches_won"] / win_tbl["matches_played"]
+
 
     # Compute the error given your confidence proportionally (we are looking at 95%)
     ci = win_tbl.apply(
@@ -86,25 +127,32 @@ def get_table_wr_error(df: DataFrame,
         result_type="expand"
     )
 
+
     # Table manipulation
     win_tbl["wr_low"] = 100 * ci[0]
     win_tbl["wr_high"] = 100 * ci[1]
     win_tbl["wr_error"] = (win_tbl["wr_high"] - win_tbl["wr_low"]) / 2
 
+
     win_tbl["confidence"] = pd.cut(
         win_tbl["matches_played"],
         bins=bins,
-        labels=["very low", "low", "medium", "high"]
+        labels=["very low", "low", "medium", "high"],
+        include_lowest=True,
     )
+
 
     win_tbl["wr"] = win_tbl["wr"].round(1)
     win_tbl["wr_low"] = win_tbl["wr_low"].round(1)
     win_tbl["wr_high"] = win_tbl["wr_high"].round(1)
     win_tbl["wr_error"] = win_tbl["wr_error"].round(1)
 
+
     table_wr = (
         win_tbl[[study_col, 'matches_played', 'wr', 'wr_low', 'wr_high', 'confidence']]
         .sort_values("matches_played", ascending=False)
+        .reset_index(drop=True)
     )
+
 
     return table_wr

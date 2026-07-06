@@ -10,7 +10,7 @@ class InfoBox(VGroup):
         end_date: str,
         samples: int,
         source: str = "Tournaments \\& League",
-        comment: str = "Number of Matches",
+        comment: str = "Number of Decks",
         font_size: int = 15,
         tex_color=TEXT_PRIMARY,
         secondary_color=TEXT_SECONDARY,
@@ -48,7 +48,7 @@ class InfoBox(VGroup):
                                f"{source}",
                                " \\quad ",
                                f"{comment}: ",
-                               f"{samples/2}",
+                               f"{samples}",
                                " \\quad ",
                                font_size=font_size, color=secondary_color)
         self.source_text[1].set_color(tex_color)

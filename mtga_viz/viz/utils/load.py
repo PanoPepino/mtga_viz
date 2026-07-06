@@ -25,9 +25,27 @@ def get_asset_path(fmt: str, name: str, suffix: str = ".jpg") -> str:
     """
     path = files("mtga_viz.viz.assets").joinpath(fmt, f"{name}{suffix}")
 
-    if not Path(path).exists():
-        raise FileNotFoundError(
-            f"Asset not found for fmt={fmt!r}, name={name!r}, suffix={suffix!r}"
-        )
-
     return str(path)
+
+
+def load_data_plot(data_dir):
+    """This function loads all required json at a given directory (basically the ones saved during exploration)"""
+    if data_dir is None:
+        raise ValueError("DATA_DIR must be defined in subclass.")
+
+    data_dir = Path(data_dir)
+
+    if not data_dir.exists():
+        raise FileNotFoundError(f"Directory not found: {data_dir}")
+
+    json_files = sorted(data_dir.glob("*.json"))   # only this folder
+    # json_files = sorted(data_dir.rglob("*.json"))  # this folder + subfolders
+
+    if not json_files:
+        raise ValueError(f"No JSON files found in: {data_dir}")
+
+    data = {}
+    for path in json_files:
+        data[path.stem] = load_json(path)
+
+    return data

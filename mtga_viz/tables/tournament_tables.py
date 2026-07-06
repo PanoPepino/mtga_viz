@@ -1,18 +1,19 @@
-
-
 import numpy as np
 import pandas as pd
+from statsmodels.stats.proportion import proportion_confint
 
 
 def get_matchup_matrix(
-        df,
-        user_col="user_deck",
-        oppo_col="oppo_deck",
-        result_col="result_vs_oppo",
-        top_n=10,
-        min_matches=5,
-        bins: list = [0, 9, 19, 29, float("inf")],
-        exclude_mirrors=True):
+    df,
+    user_col="user_deck",
+    oppo_col="oppo_deck",
+    result_col="result_vs_oppo",
+    top_n=10,
+    min_matches=5,
+    bins: list = [0, 9, 19, 29, float("inf")],
+    exclude_mirrors=True,
+    alpha=0.05,
+):
     """
     This function will create a match matrix + other dataframe information about the performance of each deck against any other deck in the metagame. 
     Observe it can be limited to top N decks of the format and the user can define minimal amount of matches to be considered.
@@ -28,27 +29,21 @@ def get_matchup_matrix(
         exclude_mirrors (bool, optional):
 
     Returns:
-        match_matrix (Dataframe): win rate layer
-        count_matrix (Dataframe): match count layer
-        count_dataframe (Dataframe): List-like object containing information about win and loss
-        match_counting (Dataframe): Total amount of matches for a given deck
-
+        wr_matrix (Dataframe): win rate layer
+        matchup_long (Dataframe): directional matchup table with columns
+            [user_deck, oppo_deck, matches, wins, losses, wr, wr_high, wr_low, confidence]
     """
-
     work = df.copy()
 
-    # Exclude the mirrors to avoid crazy stuff
     if exclude_mirrors:
         work = work[work[user_col] != work[oppo_col]].copy()
 
-    # Extract information if it is a win or a loss for that match
     parsed = work[result_col].astype(str).str.extract(r"^(\d+)-(\d+)$")
     work["wins"] = pd.to_numeric(parsed[0], errors="coerce")
     work["losses"] = pd.to_numeric(parsed[1], errors="coerce")
     work = work.dropna(subset=["wins", "losses"]).copy()
     work["won_match"] = work["wins"] > work["losses"]
 
-    #  Concatenate # of wins and losses for a given deck and add to the dataframe
     play_counts = pd.concat([
         work[user_col].value_counts(),
         work[oppo_col].value_counts()
@@ -57,7 +52,6 @@ def get_matchup_matrix(
     play_counts.columns = ["user_count", "oppo_count"]
     play_counts["total_count"] = play_counts["user_count"] + play_counts["oppo_count"]
 
-    # Sort by top decks
     top_decks = play_counts.sort_values("total_count", ascending=False).head(top_n).index
 
     work = work[
@@ -65,7 +59,6 @@ def get_matchup_matrix(
         work[oppo_col].isin(top_decks)
     ].copy()
 
-    # Canonical unordered pair
     ordered = work[[user_col, oppo_col]].apply(
         lambda row: sorted([row[user_col], row[oppo_col]]),
         axis=1,
@@ -74,7 +67,6 @@ def get_matchup_matrix(
     work["deck_a"] = ordered[0]
     work["deck_b"] = ordered[1]
 
-    # Wins from deck_a perspective
     work["deck_a_win"] = np.where(
         work[user_col] == work["deck_a"],
         work["won_match"].astype(int),
@@ -89,43 +81,78 @@ def get_matchup_matrix(
         )
     )
 
-    # Compute the WR of the upper triangular part and the lower
     matchup["wins_b"] = matchup["matches"] - matchup["wins_a"]
-    matchup["wr_a"] = (100 * matchup["wins_a"] / matchup["matches"]).round(1)
-    matchup["wr_b"] = 100 - matchup["wr_a"]
+    matchup["losses_a"] = matchup["wins_b"]
+    matchup["losses_b"] = matchup["wins_a"]
 
-    # If not enough data, then mask it
-    matchup["wr_a_masked"] = matchup["wr_a"].where(matchup["matches"] >= min_matches, np.nan)
-    matchup["wr_b_masked"] = matchup["wr_b"].where(matchup["matches"] >= min_matches, np.nan)
+    ci_a = matchup.apply(
+        lambda r: proportion_confint(
+            count=int(r["wins_a"]),
+            nobs=int(r["matches"]),
+            alpha=alpha,
+            method="wilson"
+        ),
+        axis=1,
+        result_type="expand"
+    )
 
-    # Expand back to directional rows (UT and DT)
+    ci_b = matchup.apply(
+        lambda r: proportion_confint(
+            count=int(r["wins_b"]),
+            nobs=int(r["matches"]),
+            alpha=alpha,
+            method="wilson"
+        ),
+        axis=1,
+        result_type="expand"
+    )
+
+    matchup["wr_a"] = 100 * matchup["wins_a"] / matchup["matches"]
+    matchup["wr_b"] = 100 * matchup["wins_b"] / matchup["matches"]
+    matchup["wr_low_a"] = 100 * ci_a[0]
+    matchup["wr_high_a"] = 100 * ci_a[1]
+    matchup["wr_low_b"] = 100 * ci_b[0]
+    matchup["wr_high_b"] = 100 * ci_b[1]
+
     forward = matchup.rename(columns={
         "deck_a": user_col,
         "deck_b": oppo_col,
         "wins_a": "wins",
-        "wins_b": "losses",
+        "losses_a": "losses",
         "wr_a": "wr",
-        "wr_a_masked": "wr_masked",
-    })[[user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_masked"]]
+        "wr_low_a": "wr_low",
+        "wr_high_a": "wr_high",
+    })[[user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_high", "wr_low"]]
 
     backward = matchup.rename(columns={
         "deck_b": user_col,
         "deck_a": oppo_col,
         "wins_b": "wins",
-        "wins_a": "losses",
+        "losses_b": "losses",
         "wr_b": "wr",
-        "wr_b_masked": "wr_masked",
-    })[[user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_masked"]]
+        "wr_low_b": "wr_low",
+        "wr_high_b": "wr_high",
+    })[[user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_high", "wr_low"]]
 
     matchup_long = pd.concat([forward, backward], ignore_index=True)
-    matchup_long["wr"] = matchup_long["wr"].round(1)
-    matchup_long['confidence'] = pd.cut(
-        matchup_long['matches'],
+
+    matchup_long["confidence"] = pd.cut(
+        matchup_long["matches"],
         bins=bins,
-        labels=["very low", "low", "medium", "high"]
+        labels=["very low", "low", "medium", "high"],
+        include_lowest=True,
     )
 
-    wr_matrix = matchup_long.pivot(index=user_col, columns=oppo_col, values="wr_masked")
-    n_matrix = matchup_long.pivot(index=user_col, columns=oppo_col, values="matches")
+    matchup_long["wr"] = matchup_long["wr"].round(1)
+    matchup_long["wr_low"] = matchup_long["wr_low"].round(1)
+    matchup_long["wr_high"] = matchup_long["wr_high"].round(1)
 
-    return wr_matrix, n_matrix, matchup_long, play_counts.loc[top_decks]
+    matchup_long = matchup_long[
+        [user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_high", "wr_low", "confidence"]
+    ].sort_values([user_col, oppo_col]).reset_index(drop=True)
+
+    wr_matrix = matchup_long.copy()
+    wr_matrix["wr_plot"] = wr_matrix["wr"].where(wr_matrix["matches"] >= min_matches, np.nan)
+    wr_matrix = wr_matrix.pivot(index=user_col, columns=oppo_col, values="wr_plot")
+
+    return wr_matrix, matchup_long

@@ -1,6 +1,6 @@
 from manim import *
 from mtga_viz.viz.objects.pin import Pin
-from mtga_viz.viz.utils.parser import underscore_parser, capitalise_no_score
+from mtga_viz.viz.utils.parser import capitalise_no_score
 
 
 class Legend(Group):
@@ -11,7 +11,9 @@ class Legend(Group):
         colors_dict: dict = None,
         font_size: float = 25,
         stroke_width: float = 2,
-        arrangement: str = "vertical",   # "vertical" | "horizontal"
+        arrange_in_grid: bool = False,
+        grid_rows: int | None = None,
+        grid_cols: int | None = None,
         item_order: str = "pin_text",    # "pin_text" | "text_pin"
         text_direction=RIGHT,            # direction inside text block
         pct_position: str = "after",     # "after" | "before"
@@ -25,7 +27,10 @@ class Legend(Group):
         **kwargs,
     ):
         """
-        This object creates a visual legend, that can be chosen vertical or horizontal, that may contain information about decks or archetypes of the meta you want to display.
+        This object creates a visual legend, that may contain information about
+        decks or archetypes of the meta you want to display. The legend items
+        can optionally be arranged in a grid.
+
 
 
 
@@ -35,7 +40,9 @@ class Legend(Group):
             colors_dict (dict):The colors associated to each deck/archetype.
             font_size (float, optional): The font size. Defaults to 25.
             stroke_width (float, optional): Defaults to 2.
-            arrangement (str, optional): Direction for the legend items to be displayed as a whole. It can be "vertical" or "horizontal". Defaults to "vertical".
+            arrange_in_grid (bool, optional): Whether to arrange the legend items in a grid. Defaults to False.
+            grid_rows (int | None, optional): Number of rows to use when arranging in a grid. Defaults to None.
+            grid_cols (int | None, optional): Number of columns to use when arranging in a grid. Defaults to None.
             item_order (str, optional): Order of the components inside each legend item. It can be "pin_text" or "text_pin". Defaults to "pin_text".
             text_direction (np.ndarray, optional): Direction used to arrange the label and the percentage inside the text block. For example, RIGHT, LEFT, UP or DOWN. Defaults to RIGHT.
             pct_position (str, optional): Whether the percentage is displayed before or after the label. It can be "before" or "after". Defaults to "after".
@@ -49,6 +56,7 @@ class Legend(Group):
 
 
 
+
         """
         super().__init__(**kwargs)
 
@@ -57,9 +65,6 @@ class Legend(Group):
 
         if shares_pct is not None and len(shares_pct) != len(labels):
             raise ValueError("shares_pct must have the same length as labels.")
-
-        if arrangement not in {"vertical", "horizontal"}:
-            raise ValueError("arrangement must be 'vertical' or 'horizontal'.")
 
         if item_order not in {"pin_text", "text_pin"}:
             raise ValueError("item_order must be 'pin_text' or 'text_pin'.")
@@ -87,11 +92,49 @@ class Legend(Group):
             for lab, ptc in zip(labels, shares_pct if shares_pct is not None else [None] * len(labels))
         ])
 
-        outer_dir = DOWN if arrangement == "vertical" else RIGHT
-        outer_align = LEFT if arrangement == "vertical" else UP
-        outer_align = RIGHT if arrangement == "vertical" and item_order == 'text pin' else RIGHT
+        if arrange_in_grid and grid_cols is not None and grid_cols > 1:
+            cols = []
+            n_items = len(items)
+            n_rows = grid_rows if grid_rows is not None else int(np.ceil(n_items / grid_cols))
 
-        items.arrange(outer_dir, aligned_edge=outer_align, buff=group_buff)
+            for j in range(grid_cols):
+                start = j * n_rows
+                end = min((j + 1) * n_rows, n_items)
+                if start >= n_items:
+                    break
+
+                col_items = Group(*items[start:end])
+
+                outer_align = LEFT if item_order == "pin_text" else RIGHT
+                col_items.arrange(DOWN, aligned_edge=outer_align, buff=group_buff)
+                cols.append(col_items)
+
+            items = Group(*cols).arrange(RIGHT, aligned_edge=UP, buff=group_buff)
+
+        elif arrange_in_grid and grid_rows is not None and grid_rows > 1:
+            rows = []
+            n_items = len(items)
+            n_cols = grid_cols if grid_cols is not None else int(np.ceil(n_items / grid_rows))
+
+            for i in range(grid_rows):
+                row_items = []
+                for j in range(n_cols):
+                    idx = j * grid_rows + i
+                    if idx < n_items:
+                        row_items.append(items[idx])
+
+                if row_items:
+                    row_group = Group(*row_items)
+                    rows.append(row_group)
+
+            items = Group(*rows).arrange(DOWN, aligned_edge=LEFT, buff=group_buff)
+            for row_group in items:
+                row_group.arrange(RIGHT, aligned_edge=UP, buff=group_buff)
+
+        else:
+            outer_align = LEFT if item_order == "pin_text" else RIGHT
+            items.arrange(DOWN, aligned_edge=outer_align, buff=group_buff)
+
         self.add(items)
 
     @staticmethod
@@ -144,7 +187,7 @@ class Legend(Group):
         if pct_text is not None:
             pct_mob = MathTex(
                 pct_text,
-                font_size=0.8 * font_size,
+                font_size=0.9 * font_size,
             )
             if show_text:
                 if pct_position == "before":
