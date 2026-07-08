@@ -1,11 +1,11 @@
-from pathlib import Path
 from manim import *
 
 from mtga_viz.viz.objects.deck_wr_error import DeckWRErrorPlot
 from mtga_viz.viz.objects.info_box import InfoBox
 from mtga_viz.viz.objects.legend_confidence import Legend_Confidence
-from mtga_viz.viz.utils.load import load_data_plot, load_json
-from mtga_viz.viz.utils.constants_viz import BG_COLOR, TEXT_PRIMARY, ARCH_COLORS, TEXT_SECONDARY
+from mtga_viz.viz.plots.template import *
+from mtga_viz.viz.utils.load import load_data_plot
+from mtga_viz.viz.utils.constants_viz import BG_COLOR, TEXT_PRIMARY, TEXT_SECONDARY
 
 
 class DeckWRErrorScene(Scene):
@@ -36,8 +36,12 @@ class DeckWRErrorScene(Scene):
             samples=wr_dict["total_matches"],
             font_size=15,
             comment='\\# of Matches'
-        ).next_to(title, RIGHT, aligned_edge=DOWN)
+        ).next_to(title, RIGHT)
 
-        legend_confidence = Tex("Bars show 95\\% confidence", font_size=10,
-                                color=TEXT_SECONDARY).to_corner(DR, buff=0.2)
-        self.add(title, info, errors, legend_confidence)
+        confidence_message = Tex("Bars show 95\\% confidence", font_size=10,
+                                 color=TEXT_SECONDARY)
+        legend = Legend_Confidence(title='Colors show WR confidence')
+
+        legends = Group(confidence_message, legend).arrange(
+            DOWN, aligned_edge=LEFT, buff=0.1).to_corner(DR, buff=0.2)
+        self.add(title, info, errors, legends)

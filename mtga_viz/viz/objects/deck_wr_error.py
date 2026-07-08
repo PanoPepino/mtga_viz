@@ -14,10 +14,11 @@ class DeckWRErrorPlot(Group):
         font_size=25,
         spacing_x: float = 5,
         pin_scale=0.8,
-        left_buff=0.2,
+        buff=0.2,
         stroke_width=2.5,
         x_tick_step=10,
         stroke_opacity=0.2,
+        opacity=0.6,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -41,7 +42,7 @@ class DeckWRErrorPlot(Group):
             x_length=x_length,
             y_length=n * y_step,
             tips=False,
-            axis_config={"include_ticks": False, "color": TEXT_SECONDARY, "stroke_opacity": 1},
+            axis_config={"include_ticks": False, "color": TEXT_SECONDARY, "stroke_opacity": stroke_opacity},
             y_axis_config={"stroke_opacity": 0},
             background_line_style={
                 "stroke_color": TEXT_SECONDARY,
@@ -61,14 +62,14 @@ class DeckWRErrorPlot(Group):
             end=self.axes.c2p(50, n),
             stroke_color=TEXT_SECONDARY,
             stroke_width=stroke_width,
-            stroke_opacity=0.2,
+            stroke_opacity=2*stroke_opacity,
         ).set_z_index(-1)
 
         axis_labels = self.axes.get_axis_labels(
             x_label=Tex("Win Rate\\,(\\%)", color=WHITE, font_size=20),
             y_label=MathTex("")
         )
-        axis_labels[0].next_to(v_line.get_start(), DOWN, buff=0.2)
+        axis_labels[0].next_to(self.axes.x_axis.get_center(), DOWN, buff=0.2)
 
         wr_50 = Tex('50\\%', font_size=15, color=TEXT_SECONDARY).next_to(v_line.get_end(), UP, buff=0.1)
 
@@ -103,7 +104,7 @@ class DeckWRErrorPlot(Group):
 
             wr_point = Dot(radius=0.05, point=self.axes.c2p(wr, y))
             wr_interval = Line(start=self.axes.c2p(wr_low, y), end=self.axes.c2p(wr_high, y),
-                               stroke_width=0.5, stroke_opacity=0.5)
+                               stroke_width=2*stroke_width, stroke_opacity=2*stroke_opacity)
 
             wr_base_text = MathTex(
                 rf"{wr:.1f}\,\%",
@@ -118,12 +119,16 @@ class DeckWRErrorPlot(Group):
 
             wr_text = VGroup(wr_base_text, wr_interval_text)
 
-            pin.next_to(self.axes.c2p(x_min, y), LEFT, buff=left_buff)
-            text.next_to(pin, LEFT, buff=left_buff)
+            pin.next_to(self.axes.c2p(x_min, y), LEFT, buff=buff)
+            text.next_to(pin, LEFT, buff=buff)
 
             label_group.add(text)
             pin_group.add(pin)
             dash_group.add(dash_line)
             wr_point_group.add(VGroup(wr_point, wr_interval, wr_text).set_color(CONFIDENCE_COLORS[confidence]))
 
-        self.add(self.axes, bar_group, pin_group, label_group, v_line, wr_50, axis_labels, dash_group, wr_point_group)
+        self.add(self.axes, bar_group, pin_group, label_group, axis_labels, dash_group, wr_point_group)
+
+        if x_min < 50:
+            print(x_min)
+            self.add(v_line, wr_50)

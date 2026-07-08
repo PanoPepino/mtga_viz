@@ -100,13 +100,17 @@ def get_table_event_summary(
     """
     Return a high-level summary of the entire event as a labelled Series.
 
+
     Combines three helpers to produce a single-row snapshot:
+
 
     - :func:`~mtga_viz.utils.helpers.add_hour_index` — for event duration.
     - :func:`~mtga_viz.utils.helpers.count_runs` — for run breakdown.
     - Direct parsing of ``result_col`` — for overall win rate.
 
+
     All fields except ``overall_winrate`` are cast to ``int``.
+
 
     Args:
         df (DataFrame): Enriched match DataFrame (output of
@@ -123,8 +127,10 @@ def get_table_event_summary(
         interval_window (int, optional): Hour-bucket width forwarded to
             :func:`~mtga_viz.utils.helpers.add_hour_index`. Defaults to ``1``.
 
+
     Returns:
         Series: Named scalar fields:
+
 
         - ``players`` — number of unique participants.
         - ``runs`` — total number of completed runs (normalised).
@@ -150,17 +156,22 @@ def get_table_event_summary(
     matches_won = int((wins[valid] > losses[valid]).sum())
     overall_winrate = round(100 * matches_won / matches_played, 1) if matches_played else 0.0
 
+    dt = pd.to_datetime(df[time_col], errors="coerce").dropna()
+
     table_event = pd.Series({
         "players": df_time[user_name_col].nunique(),
         "runs": int(normalized_run_counts.sum()),
         "games": len(df_time),
         "overall_winrate": overall_winrate,
         **normalized_run_counts.to_dict(),
+        "start_date": dt.min().date().isoformat() if not dt.empty else None,
+        "end_date": dt.max().date().isoformat() if not dt.empty else None,
         "event_duration": length_event,
     })
 
-    table_event.loc[table_event.index != "overall_winrate"] = (
-        table_event.loc[table_event.index != "overall_winrate"].astype(int)
+    int_fields = ["players", "runs", "games", *normalized_run_counts.index, "event_duration"]
+    table_event.loc[int_fields] = (
+        table_event.loc[int_fields].fillna(0).astype(int)
     )
 
     return table_event

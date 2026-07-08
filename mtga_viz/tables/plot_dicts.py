@@ -1,6 +1,5 @@
 # This file contains all functions to convert tables into specific dictionaries to pass manim classes
 
-
 import pandas as pd
 import json
 from math import tau
@@ -246,7 +245,7 @@ def save_top_n_wr_interval(
         df_new = df_new.dropna(subset=[deck_col])
 
     df_new = (
-        df_new.sort_values(matches_col, ascending=False)
+        df_new
         .head(top_n)
         .reset_index(drop=True)
     )
@@ -287,43 +286,12 @@ def save_matchup_matrix(
     confidence_col: str = "confidence",
     save_path: str | None = None,
 ):
-    """
-    Build a plotting dictionary for a matchup matrix and optionally save it as JSON.
-
-    Expected matchup_long columns:
-
-        user_deck | oppo_deck | matches | wins | losses | wr | wr_high | wr_low | confidence
-
-    Args:
-        wr_matrix: Pivoted win-rate matrix.
-        matchup_long: Directional matchup table.
-        user_col (str, optional): Column containing row deck labels.
-        oppo_col (str, optional): Column containing column deck labels.
-        matches_col (str, optional): Column containing number of matches.
-        wins_col (str, optional): Column containing wins.
-        losses_col (str, optional): Column containing losses.
-        wr_col (str, optional): Column containing win rate.
-        wr_low_col (str, optional): Column containing lower Wilson bound.
-        wr_high_col (str, optional): Column containing upper Wilson bound.
-        confidence_col (str, optional): Column containing qualitative confidence.
-        save_path (str | None, optional): Path where resulting dict should be saved as JSON.
-
-    Returns:
-        dict: Plot-ready dictionary for matchup matrix.
-    """
     wr_matrix_new = wr_matrix.copy()
     matchup_new = matchup_long.copy()
 
     required_cols = [
-        user_col,
-        oppo_col,
-        matches_col,
-        wins_col,
-        losses_col,
-        wr_col,
-        wr_low_col,
-        wr_high_col,
-        confidence_col,
+        user_col, oppo_col, matches_col, wins_col, losses_col,
+        wr_col, wr_low_col, wr_high_col, confidence_col,
     ]
     missing_cols = [col for col in required_cols if col not in matchup_new.columns]
     if missing_cols:
@@ -331,66 +299,80 @@ def save_matchup_matrix(
 
     matchup_new[confidence_col] = matchup_new[confidence_col].astype(str)
 
-    matchup_new = matchup_new.sort_values(
-        [user_col, oppo_col],
-        ascending=[True, True],
-    ).reset_index(drop=True)
+    deck_order_rows = matchup_new[user_col].drop_duplicates().astype(str).tolist()
+    deck_order_cols = matchup_new[oppo_col].drop_duplicates().astype(str).tolist()
 
-    deck_order_rows = [str(x) for x in wr_matrix_new.index.tolist()]
-    deck_order_cols = [str(x) for x in wr_matrix_new.columns.tolist()]
+    deck_order = deck_order_rows
+    wr_matrix_new.index = wr_matrix_new.index.astype(str)
+    wr_matrix_new.columns = wr_matrix_new.columns.astype(str)
+    wr_matrix_new = wr_matrix_new.reindex(index=deck_order, columns=deck_order).fillna(0)
 
     wr_matrix_dict = {
-        str(row_name): {
-            str(col_name): (
-                None if pd.isna(value) else round(float(value), 1)
-            )
-            for col_name, value in wr_matrix_new.loc[row_name].items()
+        row_name: {
+            col_name: round(float(wr_matrix_new.loc[row_name, col_name]), 1)
+            for col_name in deck_order
         }
-        for row_name in wr_matrix_new.index
+        for row_name in deck_order
     }
 
-    matchup_records = []
-    matchup_lookup = {}
-
+    raw_lookup = {}
     for _, row in matchup_new.iterrows():
         user_deck = str(row[user_col])
         oppo_deck = str(row[oppo_col])
 
-        record = {
-            user_col: user_deck,
-            oppo_col: oppo_deck,
+        raw_lookup.setdefault(user_deck, {})
+        raw_lookup[user_deck][oppo_deck] = {
             matches_col: int(row[matches_col]),
             wins_col: int(row[wins_col]),
             losses_col: int(row[losses_col]),
-            wr_col: None if pd.isna(row[wr_col]) else round(float(row[wr_col]), 1),
-            wr_low_col: None if pd.isna(row[wr_low_col]) else round(float(row[wr_low_col]), 1),
-            wr_high_col: None if pd.isna(row[wr_high_col]) else round(float(row[wr_high_col]), 1),
+            wr_col: 0 if pd.isna(row[wr_col]) else round(float(row[wr_col]), 1),
+            wr_low_col: 0 if pd.isna(row[wr_low_col]) else round(float(row[wr_low_col]), 1),
+            wr_high_col: 0 if pd.isna(row[wr_high_col]) else round(float(row[wr_high_col]), 1),
             confidence_col: str(row[confidence_col]),
         }
 
-        matchup_records.append(record)
+    matchup_lookup = {}
+    matchup_records = []
 
-        if user_deck not in matchup_lookup:
-            matchup_lookup[user_deck] = {}
+    for user_deck in deck_order:
+        matchup_lookup[user_deck] = {}
 
-        matchup_lookup[user_deck][oppo_deck] = {
-            matches_col: record[matches_col],
-            wins_col: record[wins_col],
-            losses_col: record[losses_col],
-            wr_col: record[wr_col],
-            wr_low_col: record[wr_low_col],
-            wr_high_col: record[wr_high_col],
-            confidence_col: record[confidence_col],
-        }
+        for oppo_deck in deck_order:
+            if user_deck == oppo_deck:
+                continue
+
+            record_data = raw_lookup.get(user_deck, {}).get(oppo_deck, {
+                matches_col: 0,
+                wins_col: 0,
+                losses_col: 0,
+                wr_col: 0,
+                wr_low_col: 0,
+                wr_high_col: 0,
+                confidence_col: "none",
+            })
+
+            matchup_lookup[user_deck][oppo_deck] = record_data
+
+            matchup_records.append({
+                user_col: user_deck,
+                oppo_col: oppo_deck,
+                matches_col: record_data[matches_col],
+                wins_col: record_data[wins_col],
+                losses_col: record_data[losses_col],
+                wr_col: record_data[wr_col],
+                wr_low_col: record_data[wr_low_col],
+                wr_high_col: record_data[wr_high_col],
+                confidence_col: record_data[confidence_col],
+            })
 
     plot_dict = {
         "plot_type": "matchup_matrix",
         "user_col": user_col,
         "oppo_col": oppo_col,
-        "deck_order_rows": deck_order_rows,
-        "deck_order_cols": deck_order_cols,
-        "n_rows": len(deck_order_rows),
-        "n_cols": len(deck_order_cols),
+        "deck_order_rows": deck_order,
+        "deck_order_cols": deck_order,
+        "n_rows": len(deck_order),
+        "n_cols": len(deck_order),
         "wr_matrix": wr_matrix_dict,
         "matchup_long": matchup_records,
         "matchup_lookup": matchup_lookup,
@@ -401,3 +383,82 @@ def save_matchup_matrix(
         save_path.parent.mkdir(parents=True, exist_ok=True)
         with open(save_path, "w", encoding="utf-8") as f:
             json.dump(plot_dict, f, indent=2, ensure_ascii=False)
+
+
+def save_runs(df, top_n, save_path):
+    table_runs = df.copy()
+
+    top_runs = table_runs.head(top_n).copy()
+
+    run_cols = [c for c in top_runs.columns if c.endswith("_win")]
+
+    for c in run_cols:
+        top_runs[c] = (top_runs[c] / top_runs["total_runs"] * 100).round(1)
+
+    out = {
+        "top_n": top_n,
+        "data": top_runs[["user_deck", "total_runs", *run_cols]].to_dict(orient="records")
+    }
+
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=2, ensure_ascii=False)
+
+
+def save_event(df, save_path):
+    event = df.copy().to_dict()
+
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(event, f, indent=2, ensure_ascii=False)
+
+
+def save_time_series(
+    df,
+    save_path="time_series.json"
+):
+    table = df.copy()
+
+    table = table.sort_values(["time_window", "share"], ascending=[True, False])
+
+    min_tw = int(table["time_window"].min())
+    max_tw = int(table["time_window"].max())
+    time_windows = list(range(min_tw, max_tw + 1))
+
+    decks = sorted(table["deck"].unique().tolist())
+
+    series = []
+    for deck in decks:
+        g = table.loc[
+            table["deck"] == deck,
+            ["time_window", "share", "share_games_total", "trophy"]
+        ].copy()
+
+        g = (
+            g.groupby("time_window", as_index=False)
+            .agg({
+                "share": "sum",
+                "share_games_total": "first",
+                "trophy": "sum"
+            })
+            .set_index("time_window")
+            .reindex(time_windows)
+            .reset_index()
+        )
+
+        g["share"] = g["share"].fillna(0).round(1)
+        g["share_games_total"] = g["share_games_total"].fillna(0).round(1)
+        g["trophy"] = g["trophy"].fillna(0).astype(int)
+
+        series.append({
+            "deck": deck,
+            "share": g["share"].tolist(),
+            "share_games_total": g["share_games_total"].tolist(),
+            "trophy": g["trophy"].tolist()
+        })
+
+    out = {
+        "time_windows": time_windows,
+        "series": series
+    }
+
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=2, ensure_ascii=False)

@@ -23,7 +23,7 @@ class Legend(Group):
         item_buff: float = 0.15,
         text_buff: float = 0.1,
         group_buff: float = 0.2,
-        ndigits: int | None = 2,
+        ndigits: int | None = 1,
         **kwargs,
     ):
         """
@@ -187,7 +187,7 @@ class Legend(Group):
         if pct_text is not None:
             pct_mob = MathTex(
                 pct_text,
-                font_size=0.9 * font_size,
+                font_size=0.8 * font_size,
             )
             if show_text:
                 if pct_position == "before":

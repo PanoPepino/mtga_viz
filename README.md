@@ -1,81 +1,87 @@
 
-
 # MTGA Visualisation Tool
----
 
-Package to create clean and insightful dashboards for competitive gaming for MTG Arena. 
+Package for clean, insightful dashboards targeting competitive MTG Arena analysis. Covers 2 of 3 layers in the `MTGA_DATA` environment: **data analysis** and **visualisation**.
 
-It targets 2 different competitive modes in MTG Arena:
+See also: [mtga_data_bot](https://github.com/PanoPepino/mtga_data_bot) · [mtga_scraper](#)
 
-- _Ladder_: Based on any collected database with ladder results, display insightful graphics
-- _Metagame_: Do you want to collect and display data on plenty of runs of a given Metagame Challenge? 
-- _Tournament_: Same as before, but with match matrix and other things.
+*(exploratory notebooks and images shared upon request)*
 
+## Architecture
 
-## Usage instructions
-
-(Under Construction)
-
-
-
-
-
-<!--
-
-# To Do
-
-# Idea of package
-
-Target: Create a package for easy visualisation for MTGA competitive gaming. 
-
-How: It should have 3 main components: 
-        - Ladder: Collect and display information on your (or shared run) along the ladder matches.
-        - Metagame: Use Metagame challenges data to share information on rounds and decks.
-        - Tournament: Use tournament information (aggregrated) to display match matrix and so on.
-
-Detail:
-
-    - Ladder: Simply collected data to be displayed. Ideal columns:
-    (timestamp | user_name | user_deck | oppo_deck | result)
-
-        Plots to draw:
-        1) Overall Archetypes piloted in ladder + sub pies with main decks piloted for each archetype
-        2) WR vs Meta % per Arch w/ confidence levels
-        3) WR vs Meta % per deck (with threshold) & confidence levels
-        4) Top X decks w/ overall WR w/ error and confidence levels.
-        5) Top X decks vs Y other decks, W-L breakdown (2-0, 2-1, etc) with # games 
-        6) Match Matrix for Top X decks with confidence levels.
-        
-
-    - Metagame. Ideal columns:
-    (timestamp | user_name | user_deck | run result | oppo_deck | result)
-
-        Plots to draw:
-        1) Overall Archetypes piloted in metagame challenge + sub pies with main decks piloted for each archetype
-        2) WR vs Meta % per Arch w/ confidence levels
-        3) WR vs Meta % per deck (with threshold) & confidence levels
-        4) Top X decks w/ overall WR w/ error and confidence levels.
-        5) Top X decks vs Y other decks, W-L breakdown (2-0, 2-1, etc) with # games 
-        6) Match Matrix for Top X decks with confidence levels.
-        7) curves of % share per top X decks vs timestamp (1h interval), with some fancy point signaling when a player got a trophy (i.e. a 7-0 run)
-        8) Normalised runs to 1 -> histogram showing % of 0-1, % of 1-1 and so on up to % of 7-0 for top X decks.
-        9) Info-graphics of trophys for those user. (i.e. Manolo -> 2 Trophies (Mardu Energy and Tempo), etc)
-        
+```
+MTGA_DATA environment
+├── mtga_scraper        ← raw data collection from webpage
+├── mtga_data_bot       ← raw data collection discord bot
+└── mtga_viz (this)
+    ├── analysis/       ← statistical processing
+    └── visualisation/  ← Manim-based dashboards
+```
 
 
 
-    - Tournament (TO be CONSIDERED IN THE FUTURE):
-        1) Overall Meta % (Just Deck)
-        2) WR vs Meta % (Just Meta)
-        3) Match matrix (avoid mirrors. Grade by confidence)
-        4) Confidence interval for each deck
+## Analysis Layer
 
-    
+Supports two competitive modalities. ~75% of functions are modality-agnostic.
 
-- Fix titles in dashboard
-- Clean code
-- Restructure package
-- Create the cli part
+### General (both modalities)
 
--->
+- Deck/archetype frequency extraction for a given meta snapshot
+- Win rate of top-N decks vs. full metagame with confidence intervals
+
+### Tournament & League
+
+- Match result matrix with confidence intervals
+- Threshold validation for top-N deck inclusion
+
+### Metagame Challenge
+
+- Normalised metagame-run distribution for top-N decks
+- Time series analysis across full event duration (includes trophy counter)
+
+
+## Visualisation Layer
+
+Built on **Manim**. Transforms analysis output into detailed dashboard components.
+
+### General Plots
+
+<p align="center">
+  <img src="images/01_arch_share.png" width="48%" />
+  <img src="images/02_deck_share.png" width="48%" />
+</p>
+<p align="center">
+  <img src="images/03_share_vs_wr.png" width="48%" />
+  <img src="images/04_wr_error.png" width="48%" />
+</p>
+
+### Tournament & League
+
+<p align="center">
+  <img src="images/05_match_matrix.png" width="48%" />
+
+</p>
+
+### Metagame Challenge
+
+<p align="center">
+  <img src="images/06_runs_histogram.png" width="48%" />
+</p>
+
+## Usage
+
+> ⚠️ Under construction.
+
+
+
+## Related Packages
+
+| Package | Role |
+|---|---|
+| `mtga_scraper` | Scrapes raw match/event data |
+| `mtga_data_bot` | Stores and pipelines structured data |
+| `mtga_viz` (this) | Analysis + visualisation |
+
+
+
 

@@ -147,9 +147,25 @@ def get_matchup_matrix(
     matchup_long["wr_low"] = matchup_long["wr_low"].round(1)
     matchup_long["wr_high"] = matchup_long["wr_high"].round(1)
 
+    # total matches for each deck across all listed matchups
+    deck_totals = (
+        matchup_long.groupby(user_col, as_index=False)["matches"]
+        .sum()
+        .rename(columns={"matches": "total_matches_for_deck"})
+    )
+
+    matchup_long = (
+        matchup_long.merge(deck_totals, on=user_col, how="left")
+        .sort_values(
+            ["total_matches_for_deck", user_col, "matches", oppo_col],
+            ascending=[False, True, False, True])
+        .drop(columns="total_matches_for_deck")
+        .reset_index(drop=True)
+    )
+
     matchup_long = matchup_long[
         [user_col, oppo_col, "matches", "wins", "losses", "wr", "wr_high", "wr_low", "confidence"]
-    ].sort_values([user_col, oppo_col]).reset_index(drop=True)
+    ]
 
     wr_matrix = matchup_long.copy()
     wr_matrix["wr_plot"] = wr_matrix["wr"].where(wr_matrix["matches"] >= min_matches, np.nan)

@@ -40,6 +40,7 @@ figs
 .analysis
 analysis
 analysis/
+mtga_viz/viz/assets/timeless/*.jpg
 
 
 # Optional: ignore local data files if they are reproducible or large

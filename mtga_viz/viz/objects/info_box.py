@@ -54,15 +54,14 @@ class InfoBox(VGroup):
         self.source_text[1].set_color(tex_color)
         self.source_text[4].set_color(tex_color)
 
-        self.date_text = Tex("start date: ",
+        self.date_text = Tex("Using data from: ",
                              f"{start_date}",
-                             " \\quad ",
-                             f"end date: ",
+                             " to ",
                              f"{end_date}",
                              font_size=font_size, color=secondary_color)
 
         self.date_text[1].set_color(tex_color)
-        self.date_text[4].set_color(tex_color)
+        self.date_text[-1].set_color(tex_color)
 
         self.text = VGroup(self.source_text, self.date_text).arrange(RIGHT, buff=2*buff_box, aligned_edge=UP)
 

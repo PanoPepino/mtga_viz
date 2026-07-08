@@ -13,9 +13,21 @@ ARCH_COLORS = {
     "blue_combo": "#1D4ED8",
     "stompy": "#F4D35E",
     "fast_combo": "#C77DFF",
-    "rogue": "#B8C4D3",
+    "other": "#B8C4D3",
     "fair_blue": "#38BDF8",
     "midrange": "#90BE6D",
+}
+
+
+RUN_RESULT_COLORS = {
+    "0_win": "#EF476F",  # keep
+    "1_win": "#F08C5A",  # coral orange
+    "2_win": "#C77DFF",  # violet
+    "3_win": "#4EA8DE",  # blue
+    "4_win": "#A3BE8C",  # sage
+    "5_win": "#52B788",  # green
+    "6_win": "#2EC4B6",  # teal
+    "7_win": "#D4AF37",  # keep gold
 }
 
 

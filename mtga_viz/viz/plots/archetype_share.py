@@ -1,7 +1,7 @@
 from manim import *
-from pathlib import Path
 
-from mtga_viz.viz.utils.load import load_json, load_data_plot
+
+from mtga_viz.viz.utils.load import load_data_plot
 from mtga_viz.viz.utils.constants_viz import BG_COLOR, TEXT_PRIMARY
 from mtga_viz.viz.objects.pie_chart import PieChart
 from mtga_viz.viz.objects.info_box import InfoBox

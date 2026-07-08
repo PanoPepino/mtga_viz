@@ -14,8 +14,10 @@ def get_table_wr_error(df: DataFrame,
                        bins: list = [0, 10, 30, 50, float("inf")],
                        alpha=0.05,
                        top_n: int | None = None,
-                       include_rogue= False,
-                       rogue_label: str = "rogue") -> DataFrame:
+                       include_rogue=False,
+                       rogue_label: str = "other",
+                       order_df: DataFrame | None = None,
+                       order_col: str | None = None) -> DataFrame:
     """
     Compute per-deck win rate with Wilson confidence intervals and a qualitative confidence label.
 
@@ -74,10 +76,8 @@ def get_table_wr_error(df: DataFrame,
         ``top_n`` rows plus one aggregated ``rogue_label`` row when applicable.
     """
 
-
     if exclude_mirrors:
         df = df[df[study_col] != df[oppo_col]].copy()
-
 
     # Parse the wins and losses and group
     win_tbl = (
@@ -95,11 +95,9 @@ def get_table_wr_error(df: DataFrame,
         .reset_index(drop=True)
     )
 
-
     if top_n is not None and len(win_tbl) > top_n and include_rogue is True:
         top_tbl = win_tbl.iloc[:top_n].copy()
         tail_tbl = win_tbl.iloc[top_n:].copy()
-
 
         rogue_row = pd.DataFrame({
             study_col: [rogue_label],
@@ -107,13 +105,10 @@ def get_table_wr_error(df: DataFrame,
             "matches_won": [int(tail_tbl["matches_won"].sum())],
         })
 
-
         win_tbl = pd.concat([top_tbl, rogue_row], ignore_index=True)
-
 
     # Compute the win rate
     win_tbl["wr"] = 100 * win_tbl["matches_won"] / win_tbl["matches_played"]
-
 
     # Compute the error given your confidence proportionally (we are looking at 95%)
     ci = win_tbl.apply(
@@ -127,12 +122,10 @@ def get_table_wr_error(df: DataFrame,
         result_type="expand"
     )
 
-
     # Table manipulation
     win_tbl["wr_low"] = 100 * ci[0]
     win_tbl["wr_high"] = 100 * ci[1]
     win_tbl["wr_error"] = (win_tbl["wr_high"] - win_tbl["wr_low"]) / 2
-
 
     win_tbl["confidence"] = pd.cut(
         win_tbl["matches_played"],
@@ -141,18 +134,31 @@ def get_table_wr_error(df: DataFrame,
         include_lowest=True,
     )
 
-
     win_tbl["wr"] = win_tbl["wr"].round(1)
     win_tbl["wr_low"] = win_tbl["wr_low"].round(1)
     win_tbl["wr_high"] = win_tbl["wr_high"].round(1)
     win_tbl["wr_error"] = win_tbl["wr_error"].round(1)
 
-
     table_wr = (
-        win_tbl[[study_col, 'matches_played', 'wr', 'wr_low', 'wr_high', 'confidence']]
-        .sort_values("matches_played", ascending=False)
-        .reset_index(drop=True)
-    )
+        win_tbl[[study_col, 'matches_played', 'wr', 'wr_low', 'wr_high', 'confidence']]).copy()
 
+    if order_df is not None:
+        if order_col is None:
+            order_col = study_col
+
+        order_map = {v: i for i, v in enumerate(order_df[order_col].tolist())}
+        table_wr["_order"] = table_wr[study_col].map(order_map).fillna(float("inf"))
+        table_wr = (
+            table_wr
+            .sort_values(["_order", "matches_played"], ascending=[True, False])
+            .drop(columns="_order")
+            .reset_index(drop=True)
+        )
+    else:
+        table_wr = (
+            table_wr
+            .sort_values("matches_played", ascending=False)
+            .reset_index(drop=True)
+        )
 
     return table_wr

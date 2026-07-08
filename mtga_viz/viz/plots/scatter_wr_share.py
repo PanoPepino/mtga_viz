@@ -11,15 +11,13 @@ from mtga_viz.viz.objects.legend import Legend
 class ScatterWRScene(Scene):
     DATA_DIR = None
 
-    
-
     def construct(self):
         self.camera.background_color = BG_COLOR
 
         data = load_data_plot(self.DATA_DIR)
         plot_dict = data['decks']
         wr_dict = data['wr_interval']
-        general_data_dict= data['general']
+        general_data_dict = data['general']
 
         title = Tex(
             f"Presence vs WR (Top {plot_dict['top_n']})",
@@ -31,7 +29,7 @@ class ScatterWRScene(Scene):
             share_plot_dict=plot_dict,
             wr_plot_dict=wr_dict,
             color_map=ARCH_COLORS,
-            scale_tag=0.9,
+            scale_tag=0.7,
         ).scale(0.9).next_to(title, DOWN, aligned_edge=LEFT, buff=0.4)
 
         info = InfoBox(
@@ -40,7 +38,7 @@ class ScatterWRScene(Scene):
             samples=wr_dict["total_matches"],
             comment='\\# of Matches',
             font_size=15
-        ).next_to(title, RIGHT, aligned_edge=DOWN)
+        ).next_to(title, RIGHT)
 
         legend = Legend(
             labels=wr_dict["labels"],
