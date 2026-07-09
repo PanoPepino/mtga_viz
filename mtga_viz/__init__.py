@@ -13,6 +13,7 @@ from mtga_viz.viz.plots.scatter_wr_share import ScatterWRScene
 from mtga_viz.viz.plots.deck_wr_error import DeckWRErrorScene
 from mtga_viz.viz.plots.matrix import MatchupMatrixScene
 from mtga_viz.viz.plots.runs_histogram import RunHistoScene
+from mtga_viz.viz.plots.time_series import TimeSeriesScene
 
 __all__ = [
     "ARCH_COLORS",
@@ -43,5 +44,6 @@ __all__ = [
     "save_top_n_deck_share",
     "save_top_n_wr_interval",
     "ScatterWRScene",
+    "TimeSeriesScene",
     "RunHistoScene",
 ]

@@ -10,6 +10,7 @@ from mtga_viz.viz.utils.constants_viz import BG_COLOR, TEXT_PRIMARY, TEXT_SECOND
 
 class DeckWRErrorScene(Scene):
     DATA_DIR = None
+    SOURCE = None
 
     def construct(self):
         self.camera.background_color = BG_COLOR
@@ -31,6 +32,7 @@ class DeckWRErrorScene(Scene):
         ).scale(0.85).to_corner(DOWN, buff=0.1)
 
         info = InfoBox(
+            source=f"{self.SOURCE}",
             start_date=general_data_dict["start_date"],
             end_date=general_data_dict["end_date"],
             samples=wr_dict["total_matches"],

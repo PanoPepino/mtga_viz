@@ -10,6 +10,7 @@ from mtga_viz.viz.plots.template import *
 
 class DeckShareScene(Scene):
     DATA_DIR = None
+    SOURCE = None
 
     def construct(self):
         self.camera.background_color = BG_COLOR
@@ -32,6 +33,7 @@ class DeckShareScene(Scene):
         ).scale(0.85).next_to(title, DOWN, aligned_edge=LEFT, buff=0.5)
 
         info = InfoBox(
+            source=f"{self.SOURCE}",
             start_date=general_data_dict["start_date"],
             end_date=general_data_dict["end_date"],
             samples=plot_dict["total"],

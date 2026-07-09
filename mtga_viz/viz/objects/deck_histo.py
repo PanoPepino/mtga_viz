@@ -82,7 +82,7 @@ class DeckShareHistogram(Group):
             bar.move_to(self.axes.c2p(cnt / 2 + 1, y))
 
             pct_text = MathTex(
-                rf"{pct:.2f}\,\%",
+                rf"{pct:.1f}\,\%",
                 font_size=pct_font_size,
                 color=TEXT_PRIMARY,
             )

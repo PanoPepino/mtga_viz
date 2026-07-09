@@ -261,6 +261,6 @@ def get_table_window_deck(
 
     return (
         table[[time_col, "deck", "share", 'share_games_total', "trophy"]]
-        .sort_values([time_col, "share"], ascending=[True, False])
+        .sort_values([time_col, "trophy"], ascending=[True, False])
         .reset_index(drop=True)
     )

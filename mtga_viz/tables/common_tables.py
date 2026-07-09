@@ -11,7 +11,7 @@ def get_table_wr_error(df: DataFrame,
                        oppo_col: str = "oppo_deck",
                        exclude_mirrors: bool = True,
                        # Can be modified depending on the heuristic discussion on what is a good confidence and not.
-                       bins: list = [0, 10, 30, 50, float("inf")],
+                       bins: list = [0, 10, 50, float("inf")],
                        alpha=0.05,
                        top_n: int | None = None,
                        include_rogue=False,
@@ -130,7 +130,7 @@ def get_table_wr_error(df: DataFrame,
     win_tbl["confidence"] = pd.cut(
         win_tbl["matches_played"],
         bins=bins,
-        labels=["very low", "low", "medium", "high"],
+        labels=["low", "medium", "high"],
         include_lowest=True,
     )
 

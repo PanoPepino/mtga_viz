@@ -417,16 +417,27 @@ def save_time_series(
 ):
     table = df.copy()
 
+    # Ensure time_window is sorted for calculation
     table = table.sort_values(["time_window", "share"], ascending=[True, False])
 
     min_tw = int(table["time_window"].min())
     max_tw = int(table["time_window"].max())
     time_windows = list(range(min_tw, max_tw + 1))
 
-    decks = sorted(table["deck"].unique().tolist())
+    # --- NEW LOGIC: Calculate deck order based on total trophies ---
+    # 1. Group by deck and sum trophies
+    # 2. Sort values descending
+    # 3. Get the index (the deck names) as a list
+    deck_order = (
+        table.groupby("deck")["trophy"]
+        .sum()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
 
     series = []
-    for deck in decks:
+    # Loop through decks using the new trophy-based order
+    for deck in deck_order:
         g = table.loc[
             table["deck"] == deck,
             ["time_window", "share", "share_games_total", "trophy"]
@@ -450,6 +461,7 @@ def save_time_series(
 
         series.append({
             "deck": deck,
+            "total_trophies": int(g["trophy"].sum()),  # Optional: helpful for debugging
             "share": g["share"].tolist(),
             "share_games_total": g["share_games_total"].tolist(),
             "trophy": g["trophy"].tolist()

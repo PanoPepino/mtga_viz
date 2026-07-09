@@ -3,7 +3,7 @@ from manim import *
 
 from mtga_viz.viz.objects.pin import Pin
 from mtga_viz.viz.utils.parser import capitalise_no_score
-from mtga_viz.viz.utils.constants_viz import TEXT_PRIMARY, TEXT_SECONDARY
+from mtga_viz.viz.utils.constants_viz import TEXT_PRIMARY, TEXT_SECONDARY, WR_COLORS, WR_CONFIDENCE
 
 
 class Tile(Group):
@@ -141,7 +141,10 @@ class Tile(Group):
             if wins == 0 and losses == 0:
                 self.add(self.bg.set(stroke_color=TEXT_SECONDARY, fill_opacity=0.1), no_data)
             else:
-                self.add(self.bg.set_color(CONFIDENCE_COLORS[confidence]), content)
+                self.bg.set(
+                    color=WR_COLORS['win'] if wr > 50 else (WR_COLORS['draw'] if wr == 50 else WR_COLORS['lose'])
+                )
+                self.add(self.bg.set_opacity(WR_CONFIDENCE[confidence]), content)
 
         elif tile_type == "corner":
             self.add(self.bg)

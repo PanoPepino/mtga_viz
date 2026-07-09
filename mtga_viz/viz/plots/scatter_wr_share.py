@@ -1,4 +1,3 @@
-from pathlib import Path
 from manim import *
 
 from mtga_viz.viz.utils.load import load_data_plot
@@ -10,6 +9,7 @@ from mtga_viz.viz.objects.legend import Legend
 
 class ScatterWRScene(Scene):
     DATA_DIR = None
+    SOURCE = None
 
     def construct(self):
         self.camera.background_color = BG_COLOR
@@ -33,6 +33,7 @@ class ScatterWRScene(Scene):
         ).scale(0.9).next_to(title, DOWN, aligned_edge=LEFT, buff=0.4)
 
         info = InfoBox(
+            source=f"{self.SOURCE}",
             start_date=general_data_dict["start_date"],
             end_date=general_data_dict["end_date"],
             samples=wr_dict["total_matches"],

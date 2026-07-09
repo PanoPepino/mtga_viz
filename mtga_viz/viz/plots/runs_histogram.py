@@ -10,6 +10,7 @@ from mtga_viz.viz.plots.template import *
 
 class RunHistoScene(Scene):
     DATA_DIR = None
+    SOURCE = None
 
     def construct(self):
         self.camera.background_color = BG_COLOR
@@ -30,7 +31,7 @@ class RunHistoScene(Scene):
         ).move_to(ORIGIN+LEFT+0.5*DOWN)
 
         info = InfoBox(
-            source='April Challenge',
+            source=f"{self.SOURCE}",
             start_date=general_data_dict["start_date"],
             end_date=general_data_dict["end_date"],
             samples=general_data_dict["runs"],

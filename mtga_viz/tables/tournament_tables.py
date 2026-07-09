@@ -10,7 +10,7 @@ def get_matchup_matrix(
     result_col="result_vs_oppo",
     top_n=10,
     min_matches=5,
-    bins: list = [0, 9, 19, 29, float("inf")],
+    bins: list = [0, 14, 29, float("inf")],
     exclude_mirrors=True,
     alpha=0.05,
 ):
@@ -139,7 +139,7 @@ def get_matchup_matrix(
     matchup_long["confidence"] = pd.cut(
         matchup_long["matches"],
         bins=bins,
-        labels=["very low", "low", "medium", "high"],
+        labels=["low", "medium", "high"],
         include_lowest=True,
     )
 

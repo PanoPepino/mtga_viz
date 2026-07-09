@@ -13,16 +13,16 @@ class ResultHistogram(Group):
         category_col="user_deck",
         total_col="total_runs",
         x_length=7,
-        y_step=0.5,
+        y_step=0.55,
         height_bar=0.4,
         font_size=25,
-        pin_scale=0.7,
+        pin_scale=0.65,
         buff=0.2,
         stroke_width=1,
         x_tick_step=10,
         crad: float = 0.05,
         stroke_opacity=0.2,
-        fill_opacity=0.6,
+        fill_opacity=0.5,
         top_tag_font_size=15,
         pct_font_size=10,
         min_pct_label_width=0.3,
@@ -84,7 +84,7 @@ class ResultHistogram(Group):
                 rect = RoundedRectangle(
                     width=self.axes.c2p(w, 0)[0] - self.axes.c2p(0, 0)[0],
                     height=height_bar,
-                    corner_radius=0.05,
+                    corner_radius=crad,
                     fill_color=RUN_RESULT_COLORS[col],
                     fill_opacity=fill_opacity,
                     stroke_color=RUN_RESULT_COLORS[col],
@@ -126,7 +126,7 @@ class ResultHistogram(Group):
                 font_size=font_size,
             ).next_to(pin, LEFT, buff=buff)
 
-            total_text = MathTex(
+            self.total_text = MathTex(
                 str(int(self.total_runs[i])),
                 font_size=font_size * 0.7,
                 color=TEXT_SECONDARY,
@@ -134,7 +134,7 @@ class ResultHistogram(Group):
 
             pin_group.add(pin)
             label_group.add(text)
-            total_group.add(total_text)
+            total_group.add(self.total_text)
 
         self.add(
             self.axes,

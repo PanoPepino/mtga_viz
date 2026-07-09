@@ -60,7 +60,19 @@ MTG_COLORS_PIN = {
 
 CONFIDENCE_COLORS = {
     "high": "#2EC4B6",
-    "medium": "#A3BE8C",
-    "low": "#F4A261",
-    "very low": "#EF476F",
+    "medium": "#F4A261",
+    "low": "#EF476F",
+}
+
+WR_CONFIDENCE = {
+    "high": 0.7,
+    "medium": 0.3,
+    "low": 0.1,
+}
+
+
+WR_COLORS = {
+    "win": "#2EC4B6",
+    "draw": "#F4A261",
+    "lose": "#EF476F",
 }

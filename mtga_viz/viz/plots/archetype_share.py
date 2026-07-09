@@ -11,6 +11,7 @@ from mtga_viz.viz.plots.template import *
 
 class ArchShareScene(Scene):
     DATA_DIR = None  # folder that contains json files
+    SOURCE = None
 
     def construct(self):
         self.camera.background_color = BG_COLOR
@@ -40,6 +41,7 @@ class ArchShareScene(Scene):
         ).scale_to_fit_height(pie.get_height()).next_to(pie, RIGHT).shift(2.5 * RIGHT)
 
         info = InfoBox(
+            source=f"{self.SOURCE}",
             start_date=general_data_dict["start_date"],
             end_date=general_data_dict["end_date"],
             samples=plot_dict["total"],
