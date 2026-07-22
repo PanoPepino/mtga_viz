@@ -9,17 +9,20 @@ See also: [mtga_data_bot](https://github.com/PanoPepino/mtga_data_bot) · [mtga_
 *(exploratory notebooks and images shared upon request)*
 
 ## Architecture
-
+```
 MTGA_DATA environment
 ├── mtga_scraper        ← raw data collection from webpage
 ├── mtga_data_bot       ← raw data collection discord bot
 └── mtga_viz (this)
-    ├── analysis/       ← statistical processing
-    └── visualisation/  ← Manim-based dashboards
+    ├── data/        ← data cleaning and clustering
+    ├── tables/      ← data to dataframes to dictionaries
+    ├── utils/       ← utility functions for analysis
+    └── viz/         ← Manim-based dashboards (use dictionaries generated with tables/)
+```
 
 ## Analysis Layer
 
-Supports two competitive modalities. ~75% of functions are modality-agnostic.
+Supports two competitive modalities. ~75% of functions are common to each mode.
 
 ### General (both modalities)
 - Deck/archetype frequency extraction for a given meta snapshot
